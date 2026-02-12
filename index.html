@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Videy Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui; background: #0a0a0a; color: white; }
+    video { width: 100%; max-height: 60vh; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+  <div class="w-full max-w-md">
+
+    <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
+
+    <div id="generator" class="bg-gray-800 p-6 rounded-2xl mb-6">
+      <p class="mb-4">Paste link videy.co:</p>
+      <input id="linkInput" type="text" placeholder="https://videy.co/v?id=abc123" 
+             class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none">
+
+      <button onclick="generate()" 
+              class="w-full bg-blue-600 py-4 rounded-xl font-bold active:bg-blue-800">
+        Generate
+      </button>
+    </div>
+
+    <div id="result" class="hidden bg-gray-800 p-6 rounded-2xl">
+      <p class="text-green-400 font-bold text-center text-xl mb-6">Berhasil!</p>
+
+      <div class="space-y-4">
+        <p class="text-sm text-gray-300">Link Player Custom:</p>
+        <div id="playerUrl" class="bg-gray-900 p-3 rounded-xl break-all text-sm font-mono"></div>
+
+        <button onclick="copy()" class="w-full bg-gray-700 py-3 rounded-xl text-sm active:bg-gray-600">
+          Copy Link
+        </button>
+
+        <video id="vid" controls class="rounded-2xl bg-black mt-4"></video>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tempat paste script Adsterra nanti -->
+  <div class="mt-8 text-center text-xs text-gray-600">
+    <!-- <script async src="https://your-adsterra-popunder.js"></script> -->
+  </div>
+
+  <script>
+    function generate() {
+      const input = document.getElementById('linkInput').value.trim();
+      if (!input) return alert('Masukkan link!');
+
+      try {
+        const url = new URL(input);
+        const id = url.searchParams.get('id');
+        if (!id) throw new Error();
+
+        const mp4 = 'https://cdn.videy.co/' + id + '.mp4';
+        const player = window.location.origin + '?v=' + id;
+
+        document.getElementById('generator').classList.add('hidden');
+        document.getElementById('result').classList.remove('hidden');
+
+        document.getElementById('playerUrl').textContent = player;
+        document.getElementById('vid').src = mp4;
+
+      } catch {
+        alert('Link tidak valid atau bukan dari videy.co');
+      }
+    }
+
+    function copy() {
+      const text = document.getElementById('playerUrl').textContent;
+      navigator.clipboard.writeText(text);
+      alert('Link dicopy!');
+    }
+
+    // Mode player kalau ada ?v= di URL
+    const params = new URLSearchParams(window.location.search);
+    const vidId = params.get('v');
+    if (vidId) {
+      document.getElementById('generator').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+
+      const mp4 = 'https://cdn.videy.co/' + vidId + '.mp4';
+      document.getElementById('playerUrl').textContent = window.location.href;
+      document.getElementById('vid').src = mp4;
+    }
+  </script>
+</body>
+</html>
