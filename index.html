@@ -16,10 +16,10 @@
 
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
 
-    <!-- Input Section -->
+    <!-- Input -->
     <div id="generator" class="bg-gray-800 p-6 rounded-2xl shadow-xl mb-6">
-      <p class="mb-4 text-lg font-medium">Paste link videy.co di sini:</p>
-      <input id="linkInput" type="text" placeholder="Contoh: https://videy.co/v?id=abc123 atau CDN link" 
+      <p class="mb-4 text-lg font-medium">Paste link videy.co atau CDN di sini:</p>
+      <input id="linkInput" type="text" placeholder="Contoh: cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123" 
              class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder-gray-400">
 
       <button onclick="generateVideo()" 
@@ -28,7 +28,7 @@
       </button>
     </div>
 
-    <!-- Result Section -->
+    <!-- Hasil -->
     <div id="result" class="hidden bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
         <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
@@ -37,7 +37,7 @@
       <div class="space-y-6">
         <div>
           <p class="text-sm text-gray-300 mb-2 font-medium">Link Player Custom (share ini):</p>
-          <div id="playerUrl" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300"></div>
+          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300"></div>
 
           <button onclick="copyLink()" 
                   class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600 transition">
@@ -48,7 +48,7 @@
         <video id="preview" controls class="w-full"></video>
 
         <p class="text-xs text-gray-500 text-center">
-          Video dari CDN videy.co • Gunakan dengan bijak & hormati hak cipta
+          Video dari CDN videy.co • Gunakan dengan bijak
         </p>
       </div>
 
@@ -60,66 +60,77 @@
 
   </div>
 
-  <!-- Area Iklan Adsterra (paste script popunder/banner/social bar di sini) -->
+  <!-- Area Iklan Adsterra -->
   <div class="mt-10 text-center text-xs text-gray-600">
-    <!-- Contoh paste Adsterra:
-    <script async data-cfasync="false" src="https://www.highcpmrevenuegate.com/xxxxxx/invoke.js"></script>
-    -->
+    <!-- Paste script Adsterra di sini -->
   </div>
 
   <script>
+    let currentPlayerUrl = '';
+
     function generateVideo() {
       let input = document.getElementById('linkInput').value.trim();
       if (!input) return alert('Masukkan link dulu ya!');
 
       try {
-        // Bersihkan typo umum
+        // Bersihkan input
         input = input.replace(/['"]/g, '');               // hapus kutip
         input = input.replace(/\s+/g, '');                // hapus spasi ekstra
-        input = input.replace(/httpss?:\/\//i, 'https://'); // fix httpss://
-        input = input.replace(/\?['"]?id=/g, '?id=');     // fix ?'id= jadi ?id=
+
+        // Tambah https:// otomatis kalau belum ada protokol
+        if (!/^https?:\/\//i.test(input)) {
+          input = 'https://' + input;
+        }
+
+        // Fix typo httpss:// atau http:// jadi https://
+        input = input.replace(/^http:\/\//i, 'https://');
+        input = input.replace(/^httpss?:\/\//i, 'https://');
+
+        input = input.replace(/\?['"]?id=/g, '?id=');
 
         const url = new URL(input);
         let id = url.searchParams.get('id');
 
         // Dari path /v/ID atau /v/?id=
         if (!id) {
-          const pathParts = url.pathname.split('/').filter(part => part);
+          const pathParts = url.pathname.split('/').filter(p => p);
           if (pathParts.length >= 2 && pathParts[0] === 'v') {
             id = pathParts[1];
           }
         }
 
-        // Dari CDN link langsung: https://cdn.videy.co/ID.mp4
+        // Dari CDN link: cdn.videy.co/ID.mp4 atau videy.co/.../ID.mp4
         if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
           const fileName = url.pathname.split('/').pop();
           id = fileName.replace(/\.mp4$/i, '');
         }
 
         if (!id || id.length < 5) {
-          throw new Error('ID video tidak ditemukan');
+          throw new Error('ID tidak ditemukan');
         }
 
         const mp4Url = `https://cdn.videy.co/${id}.mp4`;
-        const playerUrl = `\( {window.location.origin}?v= \){id}`;
+        currentPlayerUrl = `\( {window.location.origin}?v= \){id}`;
 
-        // Tampilkan hasil
         document.getElementById('generator').classList.add('hidden');
         document.getElementById('result').classList.remove('hidden');
 
-        document.getElementById('playerUrl').textContent = playerUrl;
+        document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
         document.getElementById('preview').src = mp4Url;
 
       } catch (e) {
-        alert('Link tidak valid atau format salah. Coba seperti:\nhttps://videy.co/v?id=XXXXXX\natau https://cdn.videy.co/XXXXXX.mp4');
+        alert('Link tidak valid atau format salah.\nCoba seperti:\ncdn.videy.co/ID.mp4\natau videy.co/v?id=XXXXXX');
       }
     }
 
     function copyLink() {
-      const text = document.getElementById('playerUrl').textContent;
-      navigator.clipboard.writeText(text)
-        .then(() => alert('Link sudah dicopy! Bagikan sekarang.'))
-        .catch(() => alert('Gagal copy otomatis. Select teks manual lalu copy ya.'));
+      if (currentPlayerUrl) {
+        navigator.clipboard.writeText(currentPlayerUrl)
+          .then(() => alert('Link sudah dicopy! Bagikan ya kak.'))
+          .catch(() => alert('Gagal copy otomatis. Select teks manual dulu ya.'));
+      } else {
+        alert('Belum ada link untuk dicopy.');
+      }
     }
 
     function resetGenerator() {
@@ -127,9 +138,10 @@
       document.getElementById('generator').classList.remove('hidden');
       document.getElementById('result').classList.add('hidden');
       document.getElementById('preview').src = '';
+      currentPlayerUrl = '';
     }
 
-    // Auto-detect mode player kalau dibuka dengan ?v=ID
+    // Mode player kalau dibuka dengan ?v=ID
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -138,7 +150,8 @@
         document.getElementById('result').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        document.getElementById('playerUrl').textContent = window.location.href;
+        currentPlayerUrl = window.location.href;
+        document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
         document.getElementById('preview').src = mp4Url;
       }
     });
