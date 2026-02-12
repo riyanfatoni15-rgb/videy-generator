@@ -9,7 +9,7 @@
     body { background:#000; overflow:hidden; height:100vh; font-family:system-ui, sans-serif; color:#fff; }
     #video-container { position: relative; width:100%; height:100vh; }
     
-    /* Buat iframe mengisi full seperti player Vidoy */
+    /* Iframe full seperti embed Vidoy */
     iframe {
       width: 100%;
       height: 100%;
@@ -45,7 +45,6 @@
   </script>
 
   <div id="video-container">
-    <!-- Ganti <video> jadi iframe yang embed halaman ini sendiri dengan parameter v -->
     <iframe 
       srcdoc='
         <!DOCTYPE html>
@@ -54,23 +53,91 @@
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
-            body { margin:0; background:#000; height:100vh; overflow:hidden; }
-            video { width:100%; height:100%; object-fit: contain; }
+            body { margin:0; background:#000; height:100vh; overflow:hidden; font-family:sans-serif; }
+            #player-wrapper { position:relative; width:100%; height:100%; }
+            video { width:100%; height:100%; object-fit: contain; background:#000; }
+            
+            /* Overlay tombol play besar di tengah ala Vidoy/videy */
+            .play-overlay {
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background: rgba(0,0,0,0.4);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              z-index: 20;
+              cursor: pointer;
+              transition: opacity 0.3s;
+            }
+            .play-overlay.hidden { opacity: 0; pointer-events: none; }
+            .play-btn {
+              width: 90px; height: 90px;
+              background: rgba(255,255,255,0.25);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 3px solid #fff;
+              transition: transform 0.2s, background 0.2s;
+            }
+            .play-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.4); }
+            .play-icon {
+              width: 0; height: 0;
+              border-top: 20px solid transparent;
+              border-bottom: 20px solid transparent;
+              border-left: 35px solid #fff;
+              margin-left: 8px;
+            }
+            
+            /* Kontrol native muncul saat hover/tap */
+            video::-webkit-media-controls { opacity: 0; transition: opacity 0.3s; }
+            video:hover::-webkit-media-controls { opacity: 1; }
+            video:active::-webkit-media-controls { opacity: 1; }
           </style>
         </head>
         <body>
-          <video controls playsinline preload="auto"></video>
+          <div id="player-wrapper">
+            <video id="vid" controls playsinline preload="auto"></video>
+            <div class="play-overlay" id="overlay">
+              <div class="play-btn" id="playBtn">
+                <div class="play-icon"></div>
+              </div>
+            </div>
+          </div>
+          
           <script>
-            const params = new URLSearchParams(window.parent.location.search);
+            const params = new URLSearchParams(window.parent.location.search || window.location.search);
             const videoId = params.get("v");
+            const video = document.getElementById("vid");
+            const overlay = document.getElementById("overlay");
+            const playBtn = document.getElementById("playBtn");
+            
             if (videoId && videoId.length >= 5) {
-              const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-              const video = document.querySelector("video");
-              video.src = mp4Url;
+              video.src = `https://cdn.videy.co/${videoId}.mp4`;
+              
+              // Munculkan tombol play besar di awal
               video.addEventListener("loadedmetadata", () => {
-                video.controls = true;
+                video.controls = true; // native controls
               });
-              // Tidak ada autoplay
+              
+              // Klik overlay atau tombol → play & hilangkan overlay
+              const startPlay = () => {
+                video.play().catch(e => console.log("Play error:", e));
+                overlay.classList.add("hidden");
+              };
+              
+              overlay.addEventListener("click", startPlay);
+              playBtn.addEventListener("click", startPlay);
+              
+              // Jika user pause, tampilkan lagi overlay
+              video.addEventListener("pause", () => {
+                overlay.classList.remove("hidden");
+              });
+              
+              // Saat play, hilangkan overlay
+              video.addEventListener("play", () => {
+                overlay.classList.add("hidden");
+              });
             } else {
               document.body.innerHTML = "<div style=\"color:white;text-align:center;padding:50px;\">Video tidak ditemukan.</div>";
             }
@@ -79,11 +146,10 @@
         </html>
       '
       allowfullscreen
-      allow="fullscreen; picture-in-picture"
+      allow="fullscreen; picture-in-picture; autoplay; encrypted-media"
     ></iframe>
     
-    <div class="footer">
-    </div>
+    <div class="footer"></div>
   </div>
 
 </body>
