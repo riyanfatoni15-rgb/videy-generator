@@ -1,1 +1,47 @@
 
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Player</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#000; overflow:hidden; height:100vh; font-family:system-ui, sans-serif; color:#fff; }
+    video { width:100%; height:100%; object-fit:cover; }
+    .footer { position:absolute; bottom:0; left:0; right:0; padding:8px; text-align:center; font-size:12px; background:rgba(0,0,0,0.6); pointer-events:none; }
+  </style>
+</head>
+<body>
+
+  <!-- Iklan popunder -->
+  <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
+
+  <!-- Delay popunder (bukan saat play) -->
+  <script>
+    setTimeout(() => {
+      // Script iklan biasanya handle sendiri, delay ini hanya backup jika perlu
+      console.log('Popunder delay 5 detik');
+    }, 5000);
+  </script>
+
+  <video id="playerVideo" controls autoplay playsinline></video>
+
+  <div class="footer">
+    Video dari videy.co • Gunakan bijak
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const videoId = params.get('v');
+
+    if (videoId && videoId.length >= 5) {
+      const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
+      document.getElementById('playerVideo').src = mp4Url;
+    } else {
+      // Jika tidak ada ID (keamanan), redirect balik atau tampil pesan
+      document.body.innerHTML = '<div style="text-align:center; padding:50px;">Video tidak ditemukan.</div>';
+    }
+  </script>
+</body>
+</html>
