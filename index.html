@@ -1,26 +1,25 @@
-</html>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Videy Video Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Popunder Adsterra (load di head, tapi trigger manual nanti) -->
+  <!-- Popunder Adsterra (load di head, trigger manual saat play pertama) -->
   <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
 
   <style>
-    body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; margin:0; padding:0; }
-    video { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 1rem; background: black; }
-    #player-full { position: fixed; inset: 0; background: black; display: none; align-items: center; justify-content: center; z-index: 9999; }
-    #player-full video { width: 100%; height: 100%; object-fit: contain; }
+    body, html { margin:0; padding:0; height:100%; background:#000; overflow:hidden; }
+    #main-content { padding:1.5rem; max-width:28rem; margin:0 auto; }
+    #player-full { position:fixed; inset:0; background:#000; display:none; align-items:center; justify-content:center; z-index:9999; }
+    video { width:100%; height:100%; object-fit:contain; }
   </style>
 </head>
-<body class="min-h-screen">
+<body>
 
   <!-- Halaman Generator + Hasil -->
-  <div id="main-content" class="p-6 max-w-md mx-auto">
+  <div id="main-content">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
 
     <!-- Input -->
@@ -62,14 +61,14 @@
     </div>
   </div>
 
-  <!-- Player Fullscreen Murni (saat ?v=ID) -->
-  <div id="player-full">
+  <!-- Player Fullscreen Murni (tanpa teks sama sekali) -->
+  <div id="player-full" class="hidden">
     <video id="playerVideo" controls autoplay playsinline class="w-full h-full"></video>
   </div>
 
   <script>
     let currentPlayerUrl = '';
-    let hasTriggeredAd = false;  // Iklan hanya sekali saat play pertama
+    let hasTriggeredAd = false;
 
     function generateVideo() {
       let input = document.getElementById('linkInput').value.trim();
@@ -79,6 +78,7 @@
         input = input.replace(/['"]/g, '').replace(/\s+/g, '');
 
         if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
+
         input = input.replace(/^http:\/\//i, 'https://');
         input = input.replace(/^httpss?:\/\//i, 'https://');
         input = input.replace(/\?['"]?id=/g, '?id=');
@@ -98,15 +98,14 @@
         if (!id || id.length < 5) throw new Error();
 
         const mp4Url = `https://cdn.videy.co/${id}.mp4`;
-        currentPlayerUrl = `cdn.videy.vercel.app/?v=${id}`;  // Format yang kamu mau (tanpa https://)
+        currentPlayerUrl = `cdn.videy.vercel.app/?v=${id}`;  // tanpa https://
 
-        document.getElementById('generator').classList.add('hidden');
+        document.getElementById('main-content').classList.add('hidden');
         document.getElementById('result').classList.remove('hidden');
 
         document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
         document.getElementById('preview').src = mp4Url;
 
-        // Copy otomatis
         navigator.clipboard.writeText(currentPlayerUrl).catch(() => {});
 
       } catch (e) {
@@ -124,7 +123,7 @@
 
     function resetGenerator() {
       document.getElementById('linkInput').value = '';
-      document.getElementById('generator').classList.remove('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
       document.getElementById('result').classList.add('hidden');
       document.getElementById('preview').src = '';
       currentPlayerUrl = '';
@@ -136,7 +135,7 @@
       const videoId = params.get('v');
 
       if (videoId && videoId.length >= 5) {
-        document.getElementById('generator').style.display = 'none';
+        document.getElementById('main-content').style.display = 'none';
         document.getElementById('result').style.display = 'none';
         document.getElementById('player-full').style.display = 'flex';
 
@@ -147,10 +146,10 @@
         video.addEventListener('play', () => {
           if (!hasTriggeredAd) {
             hasTriggeredAd = true;
-            // Script sudah di-load di head, cukup play video → popunder trigger otomatis
+            // Script sudah di-load di head, cukup play → popunder trigger otomatis
             console.log('Popunder Adsterra triggered on first play');
           }
-        }, { once: true });  // Hanya sekali
+        }, { once: true });
       }
     });
   </script>
