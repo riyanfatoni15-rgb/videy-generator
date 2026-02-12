@@ -8,6 +8,7 @@
   <style>
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+    #playerUrlDisplay { word-break: break-all; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -73,25 +74,22 @@
       if (!input) return alert('Masukkan link dulu ya!');
 
       try {
-        // Bersihkan input
-        input = input.replace(/['"]/g, '');               // hapus kutip
-        input = input.replace(/\s+/g, '');                // hapus spasi ekstra
+        // Clean input
+        input = input.replace(/['"]/g, '');
+        input = input.replace(/\s+/g, '');
 
         // Tambah https:// otomatis kalau belum ada protokol
         if (!/^https?:\/\//i.test(input)) {
           input = 'https://' + input;
         }
 
-        // Fix typo httpss:// atau http:// jadi https://
         input = input.replace(/^http:\/\//i, 'https://');
         input = input.replace(/^httpss?:\/\//i, 'https://');
-
         input = input.replace(/\?['"]?id=/g, '?id=');
 
         const url = new URL(input);
         let id = url.searchParams.get('id');
 
-        // Dari path /v/ID atau /v/?id=
         if (!id) {
           const pathParts = url.pathname.split('/').filter(p => p);
           if (pathParts.length >= 2 && pathParts[0] === 'v') {
@@ -99,7 +97,6 @@
           }
         }
 
-        // Dari CDN link: cdn.videy.co/ID.mp4 atau videy.co/.../ID.mp4
         if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
           const fileName = url.pathname.split('/').pop();
           id = fileName.replace(/\.mp4$/i, '');
@@ -110,12 +107,17 @@
         }
 
         const mp4Url = `https://cdn.videy.co/${id}.mp4`;
-        currentPlayerUrl = `\( {window.location.origin}?v= \){id}`;
 
+        // Link asli dibuat dan disimpan
+        currentPlayerUrl = window.location.origin + '?v=' + id;
+
+        // Tampilkan hasil
         document.getElementById('generator').classList.add('hidden');
         document.getElementById('result').classList.remove('hidden');
 
+        // Tampil link ASLI (bukan placeholder)
         document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
+
         document.getElementById('preview').src = mp4Url;
 
       } catch (e) {
