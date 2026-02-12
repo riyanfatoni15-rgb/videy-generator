@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -8,8 +7,9 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { background:#000; overflow:hidden; height:100vh; font-family:system-ui, sans-serif; color:#fff; }
-    video { width:100%; height:100%; object-fit:cover; }
-    .footer { position:absolute; bottom:0; left:0; right:0; padding:8px; text-align:center; font-size:12px; background:rgba(0,0,0,0.6); pointer-events:none; }
+    #video-container { position: relative; width:100%; height:100vh; }
+    video { width:100%; height:100%; object-fit: cover; background: black; }
+    .footer { position: absolute; bottom: 0; left:0; right:0; padding:8px; text-align:center; font-size:12px; background:rgba(0,0,0,0.6); pointer-events:none; z-index: 10; }
   </style>
 </head>
 <body>
@@ -17,18 +17,18 @@
   <!-- Iklan popunder -->
   <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
 
-  <!-- Delay popunder (bukan saat play) -->
+  <!-- Delay popunder -->
   <script>
     setTimeout(() => {
-      // Script iklan biasanya handle sendiri, delay ini hanya backup jika perlu
       console.log('Popunder delay 5 detik');
     }, 5000);
   </script>
 
-  <video id="playerVideo" controls autoplay playsinline></video>
-
-  <div class="footer">
-    Video dari videy.co • Gunakan bijak
+  <div id="video-container">
+    <video id="playerVideo" controls playsinline preload="auto"></video>
+    <div class="footer">
+      Video dari videy.co • Gunakan bijak
+    </div>
   </div>
 
   <script>
@@ -37,10 +37,19 @@
 
     if (videoId && videoId.length >= 5) {
       const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-      document.getElementById('playerVideo').src = mp4Url;
+      const video = document.getElementById('playerVideo');
+      video.src = mp4Url;
+
+      // Optional: mute awal kalau mau autoplay tanpa suara (tapi kita nonaktifkan autoplay)
+      // video.muted = true;
+      // video.play().catch(() => console.log('Autoplay blocked'));
+
+      // Tampilkan kontrol setelah load
+      video.addEventListener('loadedmetadata', () => {
+        video.controls = true; // force tampilkan kontrol
+      });
     } else {
-      // Jika tidak ada ID (keamanan), redirect balik atau tampil pesan
-      document.body.innerHTML = '<div style="text-align:center; padding:50px;">Video tidak ditemukan.</div>';
+      document.body.innerHTML = '<div style="text-align:center; padding:50px; color:white;">Video tidak ditemukan.</div>';
     }
   </script>
 </body>
