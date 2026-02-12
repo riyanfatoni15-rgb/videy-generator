@@ -9,6 +9,18 @@
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
   </style>
+
+  <!-- INSTANT REDIRECT jika ada ?v=ID -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const videoId = params.get('v');
+      if (videoId && videoId.length >= 5) {
+        // Redirect langsung tanpa flash konten
+        window.location.replace('player.html?v=' + videoId);
+      }
+    });
+  </script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
@@ -49,7 +61,7 @@
         <video id="preview" controls class="w-full"></video>
 
         <p class="text-xs text-gray-500 text-center">
-          Bagikan link di atas, saat dibuka hanya video saja.
+          Bagikan link di atas, saat dibuka langsung video tanpa celah.
         </p>
       </div>
 
@@ -57,17 +69,6 @@
               class="mt-6 w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500">
         Generate Lagi
       </button>
-    </div>
-  </div>
-
-  <!-- Player Murni (saat dibuka dengan ?v=ID) -->
-  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <!-- Script iklan popunder hanya di mode player -->
-    <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
-    
-    <video id="playerVideo" controls autoplay playsinline class="flex-1 w-full h-full object-contain"></video>
-    <div class="p-4 text-center text-sm text-gray-400">
-      enjoy watching
     </div>
   </div>
 
@@ -104,18 +105,16 @@
 
         const mp4Url = `https://cdn.videy.co/${id}.mp4`;
         const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
-        currentPlayerUrl = originWithoutProtocol + '?v=' + id;
+        currentPlayerUrl = originWithoutProtocol + '/player.html?v=' + id;
 
-        // Tampil hasil
         document.getElementById('generator').classList.add('hidden');
         document.getElementById('result').classList.remove('hidden');
 
         document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
         document.getElementById('preview').src = mp4Url;
 
-        // Copy otomatis
         navigator.clipboard.writeText(currentPlayerUrl).catch(() => {});
-        alert('Link custom sudah dicopy!\n' + currentPlayerUrl + '\nBagikan ini, saat dibuka hanya video saja.');
+        alert('Link custom sudah dicopy!\n' + currentPlayerUrl + '\nSaat dibuka langsung ke video.');
 
       } catch (e) {
         alert('Link tidak valid. Coba format seperti cdn.videy.co/ID.mp4 atau videy.co/v?id=XXXXXX');
@@ -137,23 +136,6 @@
       document.getElementById('preview').src = '';
       currentPlayerUrl = '';
     }
-
-    // Mode player murni saat ?v=ID (tanpa fullscreen)
-    window.addEventListener('load', () => {
-      const params = new URLSearchParams(window.location.search);
-      const videoId = params.get('v');
-
-      if (videoId && videoId.length >= 5) {
-        document.getElementById('generator').style.display = 'none';
-        document.getElementById('result').style.display = 'none';
-        document.getElementById('player').classList.remove('hidden');
-
-        const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        document.getElementById('playerVideo').src = mp4Url;
-
-        // Tidak ada auto fullscreen lagi, biarkan user kontrol manual
-      }
-    });
   </script>
 </body>
 </html>
