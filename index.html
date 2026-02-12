@@ -3,85 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Videy Video Generator</title>
+  <title>Videy Player</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
-    video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
-    #playerUrlDisplay { word-break: break-all; }
+    body { margin: 0; padding: 0; background: #000; color: white; font-family: system-ui, sans-serif; overflow: hidden; }
+    #generator { padding: 1.5rem; max-width: 28rem; margin: 0 auto; }
+    #player-container { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    video { width: 100%; height: 100%; object-fit: contain; }
+    #info { position: absolute; bottom: 1rem; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.875rem; pointer-events: none; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body>
 
-  <div class="w-full max-w-md">
-
+  <!-- Halaman Generator (hanya muncul kalau tidak ada ?v=ID) -->
+  <div id="generator">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
-
-    <!-- Input -->
-    <div id="generator" class="bg-gray-800 p-6 rounded-2xl shadow-xl mb-6">
-      <p class="mb-4 text-lg font-medium">Paste link videy.co atau CDN di sini:</p>
+    
+    <div class="bg-gray-800 p-6 rounded-2xl">
+      <p class="mb-4 text-lg">Paste link videy.co atau CDN:</p>
       <input id="linkInput" type="text" placeholder="Contoh: cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123" 
-             class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder-gray-400">
+             class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white">
 
       <button onclick="generateVideo()" 
-              class="w-full bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-800 transition duration-150">
-        Generate Video
+              class="w-full bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-800">
+        Generate Link Custom
       </button>
     </div>
-
-    <!-- Hasil -->
-    <div id="result" class="hidden bg-gray-800 p-6 rounded-2xl shadow-xl">
-      <div class="flex items-center justify-center mb-6">
-        <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
-      </div>
-
-      <div class="space-y-6">
-        <div>
-          <p class="text-sm text-gray-300 mb-2 font-medium">Link Player Custom (share ini):</p>
-          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300"></div>
-
-          <button onclick="copyLink()" 
-                  class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600 transition">
-            Copy Link
-          </button>
-        </div>
-
-        <video id="preview" controls class="w-full"></video>
-
-        <p class="text-xs text-gray-500 text-center">
-          Video dari CDN videy.co • Gunakan dengan bijak
-        </p>
-      </div>
-
-      <button onclick="resetGenerator()" 
-              class="mt-6 w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500 transition">
-        Generate Lagi
-      </button>
-    </div>
-
   </div>
 
-  <!-- Area Iklan Adsterra -->
-  <div class="mt-10 text-center text-xs text-gray-600">
-    <!-- Paste script Adsterra di sini -->
+  <!-- Halaman Player Murni (hanya muncul kalau ada ?v=ID) -->
+  <div id="player-container" class="hidden">
+    <video id="preview" controls autoplay playsinline class="w-full h-full"></video>
+    <div id="info">Video dari videy.co • Gunakan dengan bijak</div>
   </div>
 
   <script>
-    let currentPlayerUrl = '';
-
     function generateVideo() {
       let input = document.getElementById('linkInput').value.trim();
-      if (!input) return alert('Masukkan link dulu ya!');
+      if (!input) return alert('Masukkan link dulu!');
 
       try {
-        // Clean input
         input = input.replace(/['"]/g, '');
         input = input.replace(/\s+/g, '');
 
-        // Tambah https:// otomatis kalau belum ada protokol
-        if (!/^https?:\/\//i.test(input)) {
-          input = 'https://' + input;
-        }
+        if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
 
         input = input.replace(/^http:\/\//i, 'https://');
         input = input.replace(/^httpss?:\/\//i, 'https://');
@@ -92,70 +57,40 @@
 
         if (!id) {
           const pathParts = url.pathname.split('/').filter(p => p);
-          if (pathParts.length >= 2 && pathParts[0] === 'v') {
-            id = pathParts[1];
-          }
+          if (pathParts.length >= 2 && pathParts[0] === 'v') id = pathParts[1];
         }
 
         if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
-          const fileName = url.pathname.split('/').pop();
-          id = fileName.replace(/\.mp4$/i, '');
+          id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
         }
 
-        if (!id || id.length < 5) {
-          throw new Error('ID tidak ditemukan');
-        }
+        if (!id || id.length < 5) throw new Error();
 
-        const mp4Url = `https://cdn.videy.co/${id}.mp4`;
+        const customLink = window.location.origin + '?v=' + id;
 
-        // Link asli dibuat dan disimpan
-        currentPlayerUrl = window.location.origin + '?v=' + id;
-
-        // Tampilkan hasil
-        document.getElementById('generator').classList.add('hidden');
-        document.getElementById('result').classList.remove('hidden');
-
-        // Tampil link ASLI (bukan placeholder)
-        document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
-
-        document.getElementById('preview').src = mp4Url;
+        // Tampilkan link custom + copy otomatis
+        navigator.clipboard.writeText(customLink).catch(() => {});
+        alert('Link custom sudah dicopy!\n\n' + customLink + '\n\nBagikan link ini, saat dibuka hanya muncul video saja.');
 
       } catch (e) {
-        alert('Link tidak valid atau format salah.\nCoba seperti:\ncdn.videy.co/ID.mp4\natau videy.co/v?id=XXXXXX');
+        alert('Link tidak valid. Coba format:\ncdn.videy.co/ID.mp4\natau videy.co/v?id=XXXXXX');
       }
     }
 
-    function copyLink() {
-      if (currentPlayerUrl) {
-        navigator.clipboard.writeText(currentPlayerUrl)
-          .then(() => alert('Link sudah dicopy! Bagikan ya kak.'))
-          .catch(() => alert('Gagal copy otomatis. Select teks manual dulu ya.'));
-      } else {
-        alert('Belum ada link untuk dicopy.');
-      }
-    }
-
-    function resetGenerator() {
-      document.getElementById('linkInput').value = '';
-      document.getElementById('generator').classList.remove('hidden');
-      document.getElementById('result').classList.add('hidden');
-      document.getElementById('preview').src = '';
-      currentPlayerUrl = '';
-    }
-
-    // Mode player kalau dibuka dengan ?v=ID
+    // Cek saat halaman dibuka
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
+
       if (videoId && videoId.length >= 5) {
-        document.getElementById('generator').classList.add('hidden');
-        document.getElementById('result').classList.remove('hidden');
+        // Mode player murni
+        document.getElementById('generator').style.display = 'none';
+        document.getElementById('player-container').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        currentPlayerUrl = window.location.href;
-        document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
         document.getElementById('preview').src = mp4Url;
       }
+      // Kalau tidak ada ?v=ID → generator tetap tampil (default)
     });
   </script>
 </body>
