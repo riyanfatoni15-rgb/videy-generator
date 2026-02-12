@@ -49,7 +49,7 @@
         <video id="preview" controls class="w-full"></video>
 
         <p class="text-xs text-gray-500 text-center">
-          Bagikan link di atas, saat dibuka hanya video saja (fullscreen setelah play).
+          Bagikan link di atas, saat dibuka hanya video saja.
         </p>
       </div>
 
@@ -62,7 +62,7 @@
 
   <!-- Player Murni (saat dibuka dengan ?v=ID) -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <!-- Iklan popunder script hanya di mode player -->
+    <!-- Script iklan popunder hanya di mode player -->
     <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
     
     <video id="playerVideo" controls autoplay playsinline class="flex-1 w-full h-full object-contain"></video>
@@ -103,8 +103,6 @@
         if (!id || id.length < 5) throw new Error();
 
         const mp4Url = `https://cdn.videy.co/${id}.mp4`;
-        
-        // Link tanpa https:// (protocol-relative atau full origin tanpa protokol)
         const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
         currentPlayerUrl = originWithoutProtocol + '?v=' + id;
 
@@ -117,7 +115,7 @@
 
         // Copy otomatis
         navigator.clipboard.writeText(currentPlayerUrl).catch(() => {});
-        alert('Link custom sudah dicopy!\n' + currentPlayerUrl + '\nBagikan ini, saat dibuka fullscreen setelah klik play.');
+        alert('Link custom sudah dicopy!\n' + currentPlayerUrl + '\nBagikan ini, saat dibuka hanya video saja.');
 
       } catch (e) {
         alert('Link tidak valid. Coba format seperti cdn.videy.co/ID.mp4 atau videy.co/v?id=XXXXXX');
@@ -140,7 +138,7 @@
       currentPlayerUrl = '';
     }
 
-    // Mode player murni + auto fullscreen setelah play pertama
+    // Mode player murni saat ?v=ID (tanpa fullscreen)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -151,25 +149,9 @@
         document.getElementById('player').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        const video = document.getElementById('playerVideo');
-        video.src = mp4Url;
+        document.getElementById('playerVideo').src = mp4Url;
 
-        // Auto fullscreen setelah user klik play pertama (hanya sekali)
-        let hasRequestedFullscreen = false;
-        video.addEventListener('play', function onFirstPlay() {
-          if (!hasRequestedFullscreen) {
-            hasRequestedFullscreen = true;
-            if (video.requestFullscreen) {
-              video.requestFullscreen().catch(() => console.log("Fullscreen ditolak browser"));
-            } else if (video.webkitRequestFullscreen) { // Safari
-              video.webkitRequestFullscreen();
-            } else if (video.msRequestFullscreen) { // IE11
-              video.msRequestFullscreen();
-            }
-          }
-          // Optional: hapus event listener agar tidak trigger lagi
-          // video.removeEventListener('play', onFirstPlay);
-        }, { once: true }); // atau pakai once: true agar hanya sekali
+        // Tidak ada auto fullscreen lagi, biarkan user kontrol manual
       }
     });
   </script>
