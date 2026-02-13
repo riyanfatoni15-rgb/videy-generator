@@ -62,9 +62,6 @@
 
   <!-- Player Murni (saat dibuka dengan ?v=ID) -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <!-- Script iklan popunder hanya di mode player -->
-    <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
-    
     <video id="playerVideo" controls autoplay playsinline class="flex-1 w-full h-full object-contain"></video>
     <div class="p-4 text-center text-sm text-gray-400">
       enjoy watching
@@ -138,7 +135,7 @@
       currentPlayerUrl = '';
     }
 
-    // Mode player murni saat ?v=ID (tanpa fullscreen)
+    // Mode player murni saat ?v=ID
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -149,9 +146,32 @@
         document.getElementById('player').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        document.getElementById('playerVideo').src = mp4Url;
+        const video = document.getElementById('playerVideo');
+        video.src = mp4Url;
 
-        // Tidak ada auto fullscreen lagi, biarkan user kontrol manual
+        // ────────────────────────────────────────────────
+        //    Popunder hanya sekali saat KLIK PLAY PERTAMA
+        // ────────────────────────────────────────────────
+        let hasTriggeredPopunder = false;
+
+        function loadPopunderScript() {
+          if (hasTriggeredPopunder) return;
+          hasTriggeredPopunder = true;
+
+          const script = document.createElement('script');
+          script.src = 'https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js';
+          script.async = true;
+          document.body.appendChild(script);
+        }
+
+        video.addEventListener('play', () => {
+          if (!hasTriggeredPopunder) {
+            loadPopunderScript();
+          }
+        }, { once: false });   // kita pakai flag, jadi tidak perlu {once:true}
+
+        // Optional: jika ingin sangat ketat hanya sekali → bisa pakai {once: true}
+        // video.addEventListener('play', loadPopunderScript, { once: true });
       }
     });
   </script>
