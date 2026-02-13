@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Videy Video Generator</title>
+  <title>Videy Video Generator Multi</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
-    video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+    video { width: 100%; max-height: 50vh; object-fit: contain; border-radius: 1rem; background: black; }
+    textarea { resize: vertical; min-height: 120px; }
   </style>
 
   <!-- INSTANT REDIRECT jika ada ?v=ID -->
@@ -16,75 +17,61 @@
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
       if (videoId && videoId.length >= 5) {
-        // Redirect langsung tanpa flash konten
         window.location.replace('player.html?v=' + videoId);
       }
     });
   </script>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center p-4 pb-12">
 
-  <!-- Generator -->
-  <div id="generator" class="w-full max-w-md">
-    <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
+  <div class="w-full max-w-lg">
+
+    <h1 class="text-3xl font-bold text-center mb-8">Videy Multi Video Generator</h1>
     
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
-      <p class="mb-4 text-lg">Paste link videy.co atau CDN:</p>
-      <input id="linkInput" type="text" placeholder="cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123" 
-             class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white">
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl mb-6">
+      <p class="mb-4 text-lg">Paste link videy.co atau CDN (bisa banyak, 1 per baris):</p>
+      
+      <textarea id="linkInput" placeholder="cdn.videy.co/abc123.mp4&#10;videy.co/v?id=xyz789&#10;https://videy.co/v/abcdef123"
+                class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white font-mono text-sm"></textarea>
 
-      <button onclick="generateVideo()" 
+      <button onclick="generateVideos()" 
               class="w-full bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-800">
-        Generate
+        Generate (max 10)
       </button>
     </div>
-  </div>
 
-  <!-- Hasil Generate -->
-  <div id="result" class="hidden w-full max-w-md mt-6">
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
-      <div class="flex items-center justify-center mb-6">
-        <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
-      </div>
-
-      <div class="space-y-6">
-        <div>
-          <p class="text-sm text-gray-300 mb-2">Link Custom (share ini):</p>
-          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300"></div>
-
-          <button onclick="copyLink()" 
-                  class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600">
-            Copy Link
+    <!-- Hasil -->
+    <div id="result" class="hidden">
+      <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
+        <div class="flex items-center justify-between mb-6">
+          <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
+          <button onclick="copyAllLinks()" 
+                  class="bg-green-700 hover:bg-green-600 px-4 py-2 rounded-lg text-sm font-medium">
+            Copy Semua
           </button>
         </div>
 
-        <video id="preview" controls class="w-full"></video>
+        <div id="linksContainer" class="space-y-4 mb-6"></div>
 
-        <p class="text-xs text-gray-500 text-center">
-          Bagikan link di atas, saat dibuka langsung video tanpa celah.
-        </p>
+        <button onclick="resetGenerator()" 
+                class="w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500">
+          Generate Lagi
+        </button>
       </div>
-
-      <button onclick="resetGenerator()" 
-              class="mt-6 w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500">
-        Generate Lagi
-      </button>
     </div>
+
   </div>
 
   <script>
-    let currentPlayerUrl = '';
+    const MAX_LINKS = 10;
+    let generatedLinks = [];
 
-    function generateVideo() {
-      let input = document.getElementById('linkInput').value.trim();
-      if (!input) return alert('Masukkan link dulu!');
-
+    function extractVideyId(input) {
       try {
-        input = input.replace(/['"]/g, '');
-        input = input.replace(/\s+/g, '');
+        input = input.trim().replace(/['"]/g, '').replace(/\s+/g, '');
+        if (!input) return null;
 
         if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
-
         input = input.replace(/^http:\/\//i, 'https://');
         input = input.replace(/^httpss?:\/\//i, 'https://');
         input = input.replace(/\?['"]?id=/g, '?id=');
@@ -94,48 +81,97 @@
 
         if (!id) {
           const pathParts = url.pathname.split('/').filter(p => p);
-          if (pathParts.length >= 2 && pathParts[0] === 'v') id = pathParts[1];
+          if (pathParts.length >= 2 && pathParts[0].toLowerCase() === 'v') {
+            id = pathParts[1];
+          }
         }
 
         if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
           id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
         }
 
-        if (!id || id.length < 5) throw new Error();
-
-        const mp4Url = `https://cdn.videy.co/${id}.mp4`;
-        const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
-        currentPlayerUrl = originWithoutProtocol + '/player.html?v=' + id;
-
-        document.getElementById('generator').classList.add('hidden');
-        document.getElementById('result').classList.remove('hidden');
-
-        document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
-        document.getElementById('preview').src = mp4Url;
-
-        navigator.clipboard.writeText(currentPlayerUrl).catch(() => {});
-        alert('Link custom sudah dicopy!\n' + currentPlayerUrl + '\nSaat dibuka langsung ke video.');
-
+        if (id && id.length >= 5) return id;
+        return null;
       } catch (e) {
-        alert('Link tidak valid. Coba format seperti cdn.videy.co/ID.mp4 atau videy.co/v?id=XXXXXX');
+        return null;
       }
     }
 
-    function copyLink() {
-      if (currentPlayerUrl) {
-        navigator.clipboard.writeText(currentPlayerUrl)
-          .then(() => alert('Link sudah dicopy lagi!'))
-          .catch(() => alert('Gagal copy, select manual ya.'));
+    function generateVideos() {
+      const input = document.getElementById('linkInput').value.trim();
+      if (!input) return alert('Masukkan minimal 1 link!');
+
+      const lines = input.split('\n').map(l => l.trim()).filter(l => l);
+      if (lines.length === 0) return alert('Tidak ada link yang valid');
+
+      if (lines.length > MAX_LINKS) {
+        alert(`Maksimal ${MAX_LINKS} link sekaligus. Hanya akan memproses ${MAX_LINKS} pertama.`);
+        lines.length = MAX_LINKS;
       }
+
+      generatedLinks = [];
+      const container = document.getElementById('linksContainer');
+      container.innerHTML = '';
+
+      lines.forEach((line, index) => {
+        const id = extractVideyId(line);
+        if (!id) {
+          container.innerHTML += `
+            <div class="bg-red-900/40 p-3 rounded-xl text-sm">
+              Baris ${index+1}: <span class="text-red-300">Gagal - format tidak dikenali</span><br>
+              <span class="text-gray-500 text-xs break-all">${line}</span>
+            </div>`;
+          return;
+        }
+
+        const playerUrl = `\( {window.location.origin} \){window.location.pathname.replace(/[^/]*\( /, '')}player.html?v= \){id}`;
+
+        generatedLinks.push(playerUrl);
+
+        container.innerHTML += `
+          <div class="bg-gray-900 p-4 rounded-xl text-sm relative group">
+            <div class="font-mono text-blue-300 break-all mb-2">${playerUrl}</div>
+            <button onclick="copyToClipboard('${playerUrl}', this)" 
+                    class="absolute top-3 right-3 bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs">
+              Copy
+            </button>
+            <p class="text-xs text-gray-500 mt-1">
+              Langsung play tanpa iklan saat dibuka
+            </p>
+          </div>`;
+      });
+
+      document.getElementById('generator').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+    }
+
+    function copyToClipboard(text, button) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = button.textContent;
+        button.textContent = '✓ Copied!';
+        button.classList.add('bg-green-700');
+        setTimeout(() => {
+          button.textContent = orig;
+          button.classList.remove('bg-green-700');
+        }, 1500);
+      });
+    }
+
+    function copyAllLinks() {
+      if (generatedLinks.length === 0) return;
+      const all = generatedLinks.join('\n');
+      navigator.clipboard.writeText(all).then(() => {
+        alert('Semua link berhasil dicopy ke clipboard!');
+      });
     }
 
     function resetGenerator() {
       document.getElementById('linkInput').value = '';
-      document.getElementById('generator').classList.remove('hidden');
       document.getElementById('result').classList.add('hidden');
-      document.getElementById('preview').src = '';
-      currentPlayerUrl = '';
+      document.getElementById('generator').classList.remove('hidden');
+      generatedLinks = [];
     }
   </script>
+
 </body>
 </html>
