@@ -6,213 +6,141 @@
   <title>Videy Video Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; }
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: #000; 
+      color: #fff; 
+      margin: 0; 
+      padding: 0; 
+      height: 100vh; 
+      overflow: hidden; 
+    }
     video { width: 100%; height: 100%; object-fit: contain; background: #000; }
 
-    #player-container {
+    /* Style dari player baru Videy-style (prioritas) */
+    .video-container {
       position: relative;
       width: 100%;
       height: 100vh;
       background: #000;
-      overflow: hidden;
-      touch-action: manipulation;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
-
-    .video-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: 95vw;
-      max-height: 95vh;
-      aspect-ratio: 16 / 9;
-    }
-
-    .big-play-btn {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      cursor: pointer;
-    }
-
-    .big-play-btn > div {
-      width: 90px;
-      height: 90px;
-      background: rgba(0,0,0,0.5);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      transition: all 0.18s ease;
-      box-shadow: 0 4px 25px rgba(0,0,0,0.5);
-    }
-
-    .big-play-btn:hover > div,
-    .big-play-btn:active > div {
-      background: rgba(59,130,246,0.75);
-      transform: scale(1.08);
-    }
-
-    .custom-controls {
+    
+    .controls {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
-      padding: 10px 14px 14px;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+      padding: 10px 15px;
       opacity: 0;
-      transition: opacity 0.35s ease;
-      z-index: 8;
+      transition: opacity 0.3s ease;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    
+    .video-container:hover .controls,
+    .video-container.playing .controls {
+      opacity: 1;
       pointer-events: auto;
     }
-
-    #player-container:hover .custom-controls,
-    #player-container.controls-visible .custom-controls {
+    
+    .play-pause-btn,
+    .mute-btn,
+    .fullscreen-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 8px;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    
+    .play-pause-btn:hover,
+    .mute-btn:hover,
+    .fullscreen-btn:hover {
       opacity: 1;
     }
-
-    #player-container.playing .custom-controls {
-      opacity: 0;
-    }
-
-    .progress-bar-container {
+    
+    .progress-container {
       flex: 1;
       height: 6px;
-      background: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.3);
+      margin: 0 15px;
       border-radius: 3px;
       cursor: pointer;
-      position: relative;
-      margin: 0 8px;
-      overflow: hidden;
     }
-
+    
     .progress-bar {
       height: 100%;
       width: 0%;
-      background: #3b82f6;
+      background: #ff0000; /* merah ala Videy/YouTube */
       border-radius: 3px;
       transition: width 0.1s linear;
     }
-
-    .buffered-bar {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.25);
-      width: 0%;
-      pointer-events: none;
-    }
-
-    .time-display {
+    
+    .time {
+      color: #fff;
       font-size: 13px;
-      min-width: 90px;
+      min-width: 80px;
       text-align: center;
-      white-space: nowrap;
-      opacity: 0.9;
     }
-
-    button.control-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 26px;
-      cursor: pointer;
-      padding: 6px;
-      border-radius: 50%;
-      transition: background 0.2s;
-    }
-
-    button.control-btn:hover,
-    button.control-btn:active {
-      background: rgba(255,255,255,0.15);
-    }
-
-    .volume-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .volume-slider {
-      width: 80px;
-      height: 6px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 3px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .volume-fill {
-      height: 100%;
-      width: 100%;
-      background: #60a5fa;
-      border-radius: 3px;
-    }
-
-    .loading-spinner {
+    
+    .big-play {
       position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9;
-      background: rgba(0,0,0,0.4);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 100px;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      pointer-events: auto;
+      opacity: 0.9;
+      transition: opacity 0.3s;
+      z-index: 10;
+    }
+    
+    .big-play:hover {
+      opacity: 1;
+    }
+    
+    .hidden {
+      display: none !important;
     }
 
-    .loading-spinner > div {
-      width: 50px;
-      height: 50px;
-      border: 5px solid rgba(255,255,255,0.2);
-      border-top: 5px solid #3b82f6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Override native controls di fullscreen (penting untuk webkit) */
+    /* Override native controls (penting di fullscreen) */
     video::-webkit-media-controls-enclosure,
     video::-webkit-media-controls,
     video::-webkit-media-controls-panel {
       display: none !important;
     }
 
-    @media (max-width: 500px) {
-      .big-play-btn > div { width: 80px; height: 80px; font-size: 42px; }
-      .custom-controls { padding: 8px 10px 12px; gap: 8px; }
-      button.control-btn { font-size: 24px; padding: 8px; }
-      .volume-slider { width: 60px; }
-    }
+    /* Untuk generator & result (mobile-friendly) */
+    .max-w-md { max-width: 28rem; }
   </style>
   <script>
-    // Deteksi awal untuk hilangkan jeda: jika ada ?v=, hide generator & result segera
+    // Deteksi ?v= segera, hide generator & result tanpa jeda
     (function() {
       const params = new URLSearchParams(window.location.search);
       if (params.get('v')) {
-        document.addEventListener('DOMContentLoaded', () => {
+        document.documentElement.style.display = 'none'; // sembunyikan dulu
+        window.addEventListener('DOMContentLoaded', () => {
           document.getElementById('generator').style.display = 'none';
           document.getElementById('result').style.display = 'none';
           document.getElementById('player').classList.remove('hidden');
-          document.getElementById('player').style.display = 'flex';
+          document.documentElement.style.display = ''; // tampilkan kembali
         });
       }
     })();
   </script>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center bg-black">
+<body>
 
   <!-- Generator -->
-  <div id="generator" class="w-full max-w-md p-4">
+  <div id="generator" class="w-full max-w-md p-4 mx-auto">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
@@ -228,7 +156,7 @@
   </div>
 
   <!-- Hasil Generate -->
-  <div id="result" class="hidden w-full max-w-md mt-6 p-4">
+  <div id="result" class="hidden w-full max-w-md mt-6 p-4 mx-auto">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
         <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
@@ -259,49 +187,30 @@
     </div>
   </div>
 
-  <!-- Player Murni - desain lebih modern seperti browser default / videy style -->
-  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <!-- Iklan popunder -->
+  <!-- Player Murni - Videy style -->
+  <div id="player" class="hidden">
     <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
     
-    <div id="player-container" tabindex="0">
-      <div class="video-wrapper">
-        <video id="playerVideo" playsinline preload="auto" class="w-full h-full object-contain"></video> <!-- preload auto untuk load lebih cepat -->
+    <div class="video-container" id="playerContainer">
+      <video id="playerVideo" playsinline preload="auto">
+        Browser kamu tidak support video tag.
+      </video>
+      
+      <div class="big-play" id="bigPlay">▶</div>
+      
+      <div class="controls" id="controls">
+        <button class="play-pause-btn" id="playPause">▶</button>
+        <div class="time" id="currentTime">00:00</div>
         
-        <div id="loadingSpinner" class="loading-spinner">
-          <div></div>
-        </div>
-
-        <div id="bigPlayBtn" class="big-play-btn">
-          <div>▶</div>
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar" id="progressBar"></div>
         </div>
         
-        <div class="custom-controls">
-          <button id="playPauseBtn" class="control-btn" title="Play/Pause (space)">▶</button>
-          
-          <div class="time-display">
-            <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
-          </div>
-          
-          <div class="progress-bar-container" id="progressContainer">
-            <div class="buffered-bar" id="bufferedBar"></div>
-            <div class="progress-bar" id="progressBar"></div>
-          </div>
-          
-          <div class="volume-container">
-            <button id="muteBtn" class="control-btn" title="Mute/Unmute (m)">🔊</button>
-            <div class="volume-slider" id="volumeSlider">
-              <div class="volume-fill" id="volumeFill"></div>
-            </div>
-          </div>
-          
-          <button id="fullscreenBtn" class="control-btn ml-auto" title="Fullscreen (f)" disabled style="opacity:0.5;">⛶</button>
-        </div>
+        <div class="time" id="duration">00:00</div>
+        
+        <button class="mute-btn" id="mute">🔊</button>
+        <button class="fullscreen-btn" id="fullscreen">⛶</button>
       </div>
-    </div>
-
-    <div class="p-3 text-center text-sm text-gray-500 bg-gray-900/80">
-      enjoy watching • Iklan mendukung layanan ini
     </div>
   </div>
 
@@ -368,36 +277,30 @@
       currentPlayerUrl = '';
     }
 
-    // PLAYER MODE - eksekusi secepat mungkin, preload auto untuk kurangi jeda
+    // PLAYER MODE
     (function initPlayer() {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
 
       if (videoId && videoId.length >= 5) {
-        // Hide langsung
         document.getElementById('generator').style.display = 'none';
         document.getElementById('result').style.display = 'none';
         document.getElementById('player').classList.remove('hidden');
-        document.getElementById('player').style.display = 'flex';
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        const container = document.getElementById('player-container');
         const video = document.getElementById('playerVideo');
-        const spinner = document.getElementById('loadingSpinner');
-        const bigPlay = document.getElementById('bigPlayBtn');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const muteBtn = document.getElementById('muteBtn');
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const container = document.getElementById('playerContainer');
+        const playPause = document.getElementById('playPause');
+        const bigPlay = document.getElementById('bigPlay');
+        const mute = document.getElementById('mute');
+        const fullscreen = document.getElementById('fullscreen');
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
-        const bufferedBar = document.getElementById('bufferedBar');
         const currentTimeEl = document.getElementById('currentTime');
         const durationEl = document.getElementById('duration');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const volumeFill = document.getElementById('volumeFill');
 
         video.src = mp4Url;
-        video.load(); // Force load segera
+        video.load();
 
         function formatTime(seconds) {
           if (!seconds || isNaN(seconds)) return '00:00';
@@ -408,31 +311,18 @@
 
         video.addEventListener('loadedmetadata', () => {
           durationEl.textContent = formatTime(video.duration);
-          spinner.style.display = 'none';
         });
 
         video.addEventListener('timeupdate', () => {
-          if (!video.duration) return;
-          const percent = (video.currentTime / video.duration) * 100;
-          progressBar.style.width = percent + '%';
-          currentTimeEl.textContent = formatTime(video.currentTime);
-        });
-
-        video.addEventListener('progress', () => {
-          if (video.buffered.length > 0) {
-            const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-            const percent = (bufferedEnd / video.duration) * 100;
-            bufferedBar.style.width = percent + '%';
+          if (video.duration) {
+            const percent = (video.currentTime / video.duration) * 100;
+            progressBar.style.width = `${percent}%`;
+            currentTimeEl.textContent = formatTime(video.currentTime);
           }
         });
 
-        video.addEventListener('waiting', () => spinner.style.display = 'flex');
-        video.addEventListener('playing', () => spinner.style.display = 'none');
-        video.addEventListener('canplay', () => spinner.style.display = 'none');
-
         video.addEventListener('error', () => {
           alert('Video gagal dimuat. Cek ID atau link asli di videy.co');
-          spinner.style.display = 'none';
         });
 
         let hasPlayed = false;
@@ -444,55 +334,25 @@
               if (pop) pop.close();
               hasTriggeredPopunder = true;
             }
-            video.play().catch(() => {
-              video.muted = true;
-              video.play();
-            });
+            video.play().catch(() => { video.muted = true; video.play(); });
+            playPause.textContent = '❚❚';
+            bigPlay.classList.add('hidden');
             container.classList.add('playing');
-            playPauseBtn.textContent = '⏸';
-            bigPlay.style.display = 'none';
-            if (!hasPlayed) {
-              hasPlayed = true;
-              fullscreenBtn.disabled = false;
-              fullscreenBtn.style.opacity = '1';
-            }
+            hasPlayed = true;
           } else {
             video.pause();
-            playPauseBtn.textContent = '▶';
-            bigPlay.style.display = 'flex';
+            playPause.textContent = '▶';
+            bigPlay.classList.remove('hidden');
+            container.classList.remove('playing');
           }
         }
 
+        playPause.addEventListener('click', togglePlay);
         bigPlay.addEventListener('click', togglePlay);
-        playPauseBtn.addEventListener('click', togglePlay);
-        video.addEventListener('click', (e) => {
-          if (e.target === video) togglePlay();
-        });
+        video.addEventListener('click', togglePlay);
 
+        // Double click → fullscreen
         video.addEventListener('dblclick', () => {
-          if (hasPlayed && !document.fullscreenElement) {
-            container.requestFullscreen().catch(() => {});
-          } else if (document.fullscreenElement) {
-            document.exitFullscreen();
-          }
-        });
-
-        muteBtn.addEventListener('click', () => {
-          video.muted = !video.muted;
-          muteBtn.textContent = video.muted ? '🔇' : '🔊';
-          volumeFill.style.width = video.muted ? '0%' : (video.volume * 100) + '%';
-        });
-
-        volumeSlider.addEventListener('click', (e) => {
-          const rect = volumeSlider.getBoundingClientRect();
-          const pos = (e.clientX - rect.left) / rect.width;
-          video.volume = Math.max(0, Math.min(1, pos));
-          volumeFill.style.width = (video.volume * 100) + '%';
-          muteBtn.textContent = video.volume === 0 ? '🔇' : '🔊';
-          video.muted = false;
-        });
-
-        fullscreenBtn.addEventListener('click', () => {
           if (!document.fullscreenElement) {
             container.requestFullscreen().catch(() => {});
           } else {
@@ -500,66 +360,46 @@
           }
         });
 
-        document.addEventListener('fullscreenchange', () => {
-          fullscreenBtn.textContent = document.fullscreenElement ? '❎' : '⛶'; // Update ikon fullscreen
+        mute.addEventListener('click', () => {
+          video.muted = !video.muted;
+          mute.textContent = video.muted ? '🔇' : '🔊';
         });
 
-        progressContainer.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
-          const seek = (ev) => {
-            const rect = progressContainer.getBoundingClientRect();
-            const x = ev.clientX || (ev.touches && ev.touches[0].clientX);
-            let pos = (x - rect.left) / rect.width;
-            pos = Math.max(0, Math.min(1, pos));
-            video.currentTime = pos * video.duration;
-          };
-          seek(e);
-          const onMove = (ev) => seek(ev);
-          document.addEventListener('pointermove', onMove);
-          document.addEventListener('pointerup', () => {
-            document.removeEventListener('pointermove', onMove);
-          }, { once: true });
-        });
-
-        // Auto hide controls lebih smooth seperti browser
-        let hideTimeout;
-        function showControls() {
-          container.classList.add('controls-visible');
-          clearTimeout(hideTimeout);
-          hideTimeout = setTimeout(() => {
-            if (!video.paused) container.classList.remove('controls-visible');
-          }, 2500); // Lebih cepat hide
-        }
-
-        container.addEventListener('pointermove', showControls);
-        container.addEventListener('touchstart', showControls);
-        showControls();
-
-        // Keyboard controls
-        container.addEventListener('keydown', (e) => {
-          if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-          e.preventDefault();
-          switch (e.key.toLowerCase()) {
-            case ' ': case 'k': togglePlay(); break;
-            case 'm':
-              video.muted = !video.muted;
-              muteBtn.textContent = video.muted ? '🔇' : '🔊';
-              volumeFill.style.width = video.muted ? '0%' : (video.volume * 100) + '%';
-              break;
-            case 'arrowright': video.currentTime += 5; break;
-            case 'arrowleft': video.currentTime -= 5; break;
-            case 'f':
-              if (hasPlayed) {
-                if (!document.fullscreenElement) container.requestFullscreen();
-                else document.exitFullscreen();
-              }
-              break;
+        fullscreen.addEventListener('click', () => {
+          if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen();
           }
         });
 
-        container.focus();
+        progressContainer.addEventListener('click', (e) => {
+          const rect = progressContainer.getBoundingClientRect();
+          const pos = (e.clientX - rect.left) / rect.width;
+          video.currentTime = pos * video.duration;
+        });
+
+        // Auto-hide controls
+        let timeout;
+        container.addEventListener('mousemove', () => {
+          clearTimeout(timeout);
+          container.classList.add('playing');
+          timeout = setTimeout(() => {
+            if (!video.paused) {
+              container.classList.remove('playing');
+            }
+          }, 3000);
+        });
+
+        container.addEventListener('touchstart', () => {
+          clearTimeout(timeout);
+          container.classList.add('playing');
+          timeout = setTimeout(() => {
+            if (!video.paused) container.classList.remove('playing');
+          }, 3000);
+        });
       }
     })();
   </script>
 </body>
-  </html>
+</html>
