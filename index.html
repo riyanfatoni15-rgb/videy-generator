@@ -7,19 +7,107 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
-    video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+    video { width: 100%; height: 100%; object-fit: contain; background: black; }
     #ad-overlay { 
-      position: absolute; inset: 0; background: rgba(0,0,0,0.7); 
+      position: absolute; inset: 0; background: rgba(0,0,0,0.75); 
       display: flex; align-items: center; justify-content: center; 
-      color: white; font-size: 1.5rem; font-weight: bold; z-index: 10;
-      pointer-events: none;
+      color: white; font-size: 2rem; font-weight: bold; z-index: 10;
+      pointer-events: none; transition: opacity 0.4s;
     }
     #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 20; }
+    
+    /* Custom Player Style mirip Videy-like */
+    #player-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    #playerVideo {
+      display: block;
+    }
+    .custom-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      padding: 10px 15px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    #player-container:hover .custom-controls,
+    #player-container.playing .custom-controls {
+      opacity: 1;
+    }
+    .big-play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90px;
+      height: 90px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      cursor: pointer;
+      z-index: 8;
+      transition: all 0.25s;
+    }
+    .big-play-btn:hover {
+      background: rgba(30, 144, 255, 0.7);
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+    .progress-bar-container {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #3b82f6;
+      border-radius: 3px;
+    }
+    .time-display {
+      font-size: 13px;
+      min-width: 90px;
+      text-align: center;
+    }
+    button.control-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    button.control-btn:hover {
+      background: rgba(255,255,255,0.15);
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator -->
+  <!-- Generator (tidak diubah) -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -35,7 +123,7 @@
     </div>
   </div>
 
-  <!-- Hasil Generate -->
+  <!-- Hasil Generate (tidak diubah) -->
   <div id="result" class="hidden w-full max-w-md mt-6">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
@@ -67,20 +155,46 @@
     </div>
   </div>
 
-  <!-- Player Murni (saat dibuka dengan ?v=ID) -->
+  <!-- Player Murni (di-upgrade jadi mirip Videy) -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <!-- Script iklan popunder hanya di mode player -->
+    <!-- Script iklan hanya di mode player -->
     <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
     
-    <div class="relative flex-1 w-full h-full">
-      <video id="playerVideo" controls autoplay playsinline muted class="w-full h-full object-contain"></video>
-      <div id="ad-overlay" class="hidden">Iklan...</div>
-      <div id="loading" class="hidden">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+    <div id="player-container" class="flex-1 relative">
+      <div class="video-wrapper">
+        <video id="playerVideo" playsinline class="w-full h-full object-contain"></video>
+        
+        <!-- Big Play Button -->
+        <div id="bigPlayBtn" class="big-play-btn text-white">▶</div>
+        
+        <!-- Ad Overlay -->
+        <div id="ad-overlay" class="hidden">Iklan...</div>
+        
+        <!-- Loading -->
+        <div id="loading" class="hidden">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        </div>
+      </div>
+
+      <!-- Custom Controls -->
+      <div class="custom-controls">
+        <button id="playPauseBtn" class="control-btn">▶</button>
+        
+        <div class="time-display">
+          <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
+        </div>
+        
+        <div class="progress-bar-container" id="progressContainer">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <button id="muteBtn" class="control-btn">🔊</button>
+        
+        <button id="fullscreenBtn" class="control-btn ml-auto">⛶</button>
       </div>
     </div>
 
-    <div class="p-4 text-center text-sm text-gray-400">
+    <div class="p-3 text-center text-sm text-gray-500 bg-gray-900">
       enjoy watching • Iklan mendukung layanan ini
     </div>
   </div>
@@ -88,6 +202,7 @@
   <script>
     let currentPlayerUrl = '';
 
+    // Fungsi generator tetap sama
     function generateVideo() {
       let input = document.getElementById('linkInput').value.trim();
       if (!input) return alert('Masukkan link dulu!');
@@ -147,7 +262,7 @@
       currentPlayerUrl = '';
     }
 
-    // ================== PLAYER MODE DENGAN IKLAN ==================
+    // ================== PLAYER MODE DENGAN IKLAN & CUSTOM CONTROLS ==================
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -161,39 +276,99 @@
         const video = document.getElementById('playerVideo');
         const adOverlay = document.getElementById('ad-overlay');
         const loading = document.getElementById('loading');
+        const bigPlayBtn = document.getElementById('bigPlayBtn');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
 
         loading.classList.remove('hidden');
-
         video.src = mp4Url;
         video.load();
 
-        // Perbaikan video tidak muncul
+        // Format waktu MM:SS
+        function formatTime(seconds) {
+          const min = Math.floor(seconds / 60);
+          const sec = Math.floor(seconds % 60);
+          return `\( {min.toString().padStart(2,'0')}: \){sec.toString().padStart(2,'0')}`;
+        }
+
+        video.addEventListener('loadedmetadata', () => {
+          durationEl.textContent = formatTime(video.duration);
+        });
+
+        video.addEventListener('timeupdate', () => {
+          const percent = (video.currentTime / video.duration) * 100;
+          progressBar.style.width = percent + '%';
+          currentTimeEl.textContent = formatTime(video.currentTime);
+        });
+
         video.addEventListener('canplay', () => {
           loading.classList.add('hidden');
-          video.play().catch(e => {
-            console.log("Autoplay dicegah:", e);
-            video.muted = true; // pastikan muted untuk autoplay policy
-            video.play();
-          });
+          bigPlayBtn.style.display = 'flex'; // tampilkan big play awal
         });
 
         video.addEventListener('error', () => {
           loading.classList.add('hidden');
-          alert('Video gagal dimuat. Kemungkinan:\n1. ID salah\n2. Video dihapus\n3. Masalah jaringan/CORS\nCoba cek link asli di videy.co');
+          alert('Video gagal dimuat. Kemungkinan:\n1. ID salah\n2. Video dihapus\n3. Masalah jaringan/CORS');
         });
 
-        // ------------------ IKLAN SEDERHANA ------------------
-        // Pre-roll (5 detik teks iklan sebelum main)
+        // Play/Pause toggle
+        function togglePlay() {
+          if (video.paused) {
+            video.play().catch(() => { video.muted = true; video.play(); });
+            document.getElementById('player-container').classList.add('playing');
+            playPauseBtn.textContent = '⏸';
+            bigPlayBtn.style.display = 'none';
+          } else {
+            video.pause();
+            playPauseBtn.textContent = '▶';
+            bigPlayBtn.style.display = 'flex';
+          }
+        }
+
+        bigPlayBtn.onclick = togglePlay;
+        playPauseBtn.onclick = togglePlay;
+        video.onclick = togglePlay;
+
+        // Mute
+        muteBtn.onclick = () => {
+          video.muted = !video.muted;
+          muteBtn.textContent = video.muted ? '🔇' : '🔊';
+        };
+
+        // Fullscreen
+        fullscreenBtn.onclick = () => {
+          if (!document.fullscreenElement) {
+            document.getElementById('player-container').requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen();
+          }
+        };
+
+        // Progress seek
+        progressContainer.onclick = (e) => {
+          const rect = progressContainer.getBoundingClientRect();
+          const pos = (e.clientX - rect.left) / rect.width;
+          video.currentTime = pos * video.duration;
+        };
+
+        // ------------------ IKLAN hanya di player ------------------
+        // Pre-roll
         setTimeout(() => {
+          if (!video.paused) video.pause();
           adOverlay.textContent = 'Iklan • Tunggu 5 detik...';
           adOverlay.classList.remove('hidden');
           setTimeout(() => {
             adOverlay.classList.add('hidden');
-            video.play().catch(() => {});
+            togglePlay(); // mulai main setelah iklan
           }, 5000);
-        }, 1000);
+        }, 800);
 
-        // Mid-roll contoh di detik ke-30 (bisa ditambah lebih banyak)
+        // Mid-roll contoh (detik 30)
         let midrollShown = false;
         video.addEventListener('timeupdate', () => {
           if (!midrollShown && video.currentTime >= 30) {
@@ -201,7 +376,6 @@
             video.pause();
             adOverlay.textContent = 'Iklan Mid-roll • 8 detik...';
             adOverlay.classList.remove('hidden');
-
             setTimeout(() => {
               adOverlay.classList.add('hidden');
               video.play().catch(() => {});
@@ -212,4 +386,4 @@
     });
   </script>
 </body>
-</html>
+  </html>
