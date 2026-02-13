@@ -8,6 +8,13 @@
   <style>
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+    #ad-overlay { 
+      position: absolute; inset: 0; background: rgba(0,0,0,0.7); 
+      display: flex; align-items: center; justify-content: center; 
+      color: white; font-size: 1.5rem; font-weight: bold; z-index: 10;
+      pointer-events: none;
+    }
+    #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 20; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -65,9 +72,16 @@
     <!-- Script iklan popunder hanya di mode player -->
     <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
     
-    <video id="playerVideo" controls autoplay playsinline class="flex-1 w-full h-full object-contain"></video>
+    <div class="relative flex-1 w-full h-full">
+      <video id="playerVideo" controls autoplay playsinline muted class="w-full h-full object-contain"></video>
+      <div id="ad-overlay" class="hidden">Iklan...</div>
+      <div id="loading" class="hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      </div>
+    </div>
+
     <div class="p-4 text-center text-sm text-gray-400">
-      enjoy watching
+      enjoy watching • Iklan mendukung layanan ini
     </div>
   </div>
 
@@ -79,11 +93,8 @@
       if (!input) return alert('Masukkan link dulu!');
 
       try {
-        input = input.replace(/['"]/g, '');
-        input = input.replace(/\s+/g, '');
-
+        input = input.replace(/['"]/g, '').replace(/\s+/g, '');
         if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
-
         input = input.replace(/^http:\/\//i, 'https://');
         input = input.replace(/^httpss?:\/\//i, 'https://');
         input = input.replace(/\?['"]?id=/g, '?id=');
@@ -106,27 +117,25 @@
         const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
         currentPlayerUrl = originWithoutProtocol + '?v=' + id;
 
-        // Tampil hasil
         document.getElementById('generator').classList.add('hidden');
         document.getElementById('result').classList.remove('hidden');
 
         document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
         document.getElementById('preview').src = mp4Url;
 
-        // Copy otomatis
         navigator.clipboard.writeText(currentPlayerUrl).catch(() => {});
-        alert('Link custom sudah dicopy!\n' + currentPlayerUrl + '\nBagikan ini, saat dibuka hanya video saja.');
+        alert('Link custom sudah dicopy!\n' + currentPlayerUrl);
 
       } catch (e) {
-        alert('Link tidak valid. Coba format seperti cdn.videy.co/ID.mp4 atau videy.co/v?id=XXXXXX');
+        alert('Link tidak valid atau ID salah. Contoh: cdn.videy.co/abc123.mp4 atau videy.co/v?id=abc123');
       }
     }
 
     function copyLink() {
       if (currentPlayerUrl) {
         navigator.clipboard.writeText(currentPlayerUrl)
-          .then(() => alert('Link sudah dicopy lagi!'))
-          .catch(() => alert('Gagal copy, select manual ya.'));
+          .then(() => alert('Link sudah dicopy!'))
+          .catch(() => alert('Gagal copy otomatis, select & copy manual ya.'));
       }
     }
 
@@ -138,7 +147,7 @@
       currentPlayerUrl = '';
     }
 
-    // Mode player murni saat ?v=ID (tanpa fullscreen)
+    // ================== PLAYER MODE DENGAN IKLAN ==================
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -149,9 +158,56 @@
         document.getElementById('player').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        document.getElementById('playerVideo').src = mp4Url;
+        const video = document.getElementById('playerVideo');
+        const adOverlay = document.getElementById('ad-overlay');
+        const loading = document.getElementById('loading');
 
-        // Tidak ada auto fullscreen lagi, biarkan user kontrol manual
+        loading.classList.remove('hidden');
+
+        video.src = mp4Url;
+        video.load();
+
+        // Perbaikan video tidak muncul
+        video.addEventListener('canplay', () => {
+          loading.classList.add('hidden');
+          video.play().catch(e => {
+            console.log("Autoplay dicegah:", e);
+            video.muted = true; // pastikan muted untuk autoplay policy
+            video.play();
+          });
+        });
+
+        video.addEventListener('error', () => {
+          loading.classList.add('hidden');
+          alert('Video gagal dimuat. Kemungkinan:\n1. ID salah\n2. Video dihapus\n3. Masalah jaringan/CORS\nCoba cek link asli di videy.co');
+        });
+
+        // ------------------ IKLAN SEDERHANA ------------------
+        // Pre-roll (5 detik teks iklan sebelum main)
+        setTimeout(() => {
+          adOverlay.textContent = 'Iklan • Tunggu 5 detik...';
+          adOverlay.classList.remove('hidden');
+          setTimeout(() => {
+            adOverlay.classList.add('hidden');
+            video.play().catch(() => {});
+          }, 5000);
+        }, 1000);
+
+        // Mid-roll contoh di detik ke-30 (bisa ditambah lebih banyak)
+        let midrollShown = false;
+        video.addEventListener('timeupdate', () => {
+          if (!midrollShown && video.currentTime >= 30) {
+            midrollShown = true;
+            video.pause();
+            adOverlay.textContent = 'Iklan Mid-roll • 8 detik...';
+            adOverlay.classList.remove('hidden');
+
+            setTimeout(() => {
+              adOverlay.classList.add('hidden');
+              video.play().catch(() => {});
+            }, 8000);
+          }
+        });
       }
     });
   </script>
