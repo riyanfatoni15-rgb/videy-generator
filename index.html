@@ -1,80 +1,104 @@
-<script>
-  function generate() {
-    const teks = document.getElementById('input').value.trim();
-    if (!teks) {
-      alert('Isi dulu linknya bro!');
-      return;
-    }
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Videy Video Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
+    video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+  </style>
 
-    const lines = teks.split('\n').filter(l => l.trim() !== '');
-    let output = '';
-
-    lines.forEach((line, idx) => {
-      let raw = line.trim();
-      let id = null;
-
-      // Parsing lebih longgar & case-insensitive
-      raw = raw.replace(/^http:\/\//i, 'https://');
-      if (!raw.startsWith('https://')) raw = 'https://' + raw;
-
-      try {
-        const url = new URL(raw);
-
-        // Case 1: ?id=xxxx
-        id = url.searchParams.get('id');
-
-        // Case 2: /v/xxxx
-        if (!id) {
-          const path = url.pathname.toLowerCase();
-          if (path.startsWith('/v/')) {
-            id = path.split('/v/')[1].split('?')[0].split('/')[0];
-          }
-        }
-
-        // Case 3: cdn.videy.co/xxxx.mp4
-        if (!id && url.hostname.includes('videy.co') && raw.endsWith('.mp4')) {
-          id = raw.split('/').pop().replace(/\.mp4$/i, '');
-        }
-
-        // Case 4: kalau input langsung ID panjang >=5
-        if (!id && raw.length >= 5 && /^[a-zA-Z0-9_-]+$/.test(raw)) {
-          id = raw;
-        }
-
-      } catch (e) {
-        // Gagal parse URL, coba manual split
-        if (raw.includes('videy.co')) {
-          const parts = raw.split(/[\?\/]/);
-          id = parts.find(p => p.length >= 5 && /^[a-zA-Z0-9]+$/.test(p));
-        }
-      }
-
-      if (id && id.length >= 5) {
-        const link = window.location.origin + window.location.pathname + '?v=' + id;
-        output += `
-          <div class="bg-gray-900 p-3 rounded relative mb-2">
-            <p class="break-all text-blue-300 text-sm">${link}</p>
-            <button onclick="navigator.clipboard.writeText('${link}').then(()=>alert('Link dicopy!')).catch(()=>alert('Gagal copy, select manual'))" 
-                    class="absolute top-2 right-2 bg-blue-700 px-3 py-1 rounded text-xs text-white">
-              Copy
-            </button>
-          </div>`;
-      } else {
-        output += `<div class="bg-red-900 p-3 rounded text-sm">Baris \( {idx+1}: Gagal ekstrak ID dari " \){raw}"</div>`;
+  <!-- INSTANT REDIRECT jika ada ?v=ID -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const videoId = params.get('v');
+      if (videoId && videoId.length >= 5) {
+        // Redirect langsung tanpa flash konten
+        window.location.replace('player.html?v=' + videoId);
       }
     });
+  </script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    if (output) {
-      document.getElementById('daftar').innerHTML = output;
-      document.getElementById('hasil').classList.remove('hidden');
-    } else {
-      alert('Tidak ada ID valid yang ditemukan dari link yang kamu paste.');
-    }
-  }
+  <!-- Generator -->
+  <div id="generator" class="w-full max-w-md">
+    <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
+    
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
+      <p class="mb-4 text-lg">Paste link videy.co atau CDN:</p>
+      <input id="linkInput" type="text" placeholder="cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123" 
+             class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white">
 
-  function reset() {
-    document.getElementById('input').value = '';
-    document.getElementById('hasil').classList.add('hidden');
-    document.getElementById('daftar').innerHTML = '';
-  }
-</script>
+      <button onclick="generateVideo()" 
+              class="w-full bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-800">
+        Generate
+      </button>
+    </div>
+  </div>
+
+  <!-- Hasil Generate -->
+  <div id="result" class="hidden w-full max-w-md mt-6">
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
+      <div class="flex items-center justify-center mb-6">
+        <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <p class="text-sm text-gray-300 mb-2">Link Custom (share ini):</p>
+          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300"></div>
+
+          <button onclick="copyLink()" 
+                  class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600">
+            Copy Link
+          </button>
+        </div>
+
+        <video id="preview" controls class="w-full"></video>
+
+        <p class="text-xs text-gray-500 text-center">
+          Bagikan link di atas, saat dibuka langsung video tanpa celah.
+        </p>
+      </div>
+
+      <button onclick="resetGenerator()" 
+              class="mt-6 w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500">
+        Generate Lagi
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let currentPlayerUrl = '';
+
+    function generateVideo() {
+      let input = document.getElementById('linkInput').value.trim();
+      if (!input) return alert('Masukkan link dulu!');
+
+      try {
+        input = input.replace(/['"]/g, '');
+        input = input.replace(/\s+/g, '');
+
+        if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
+
+        input = input.replace(/^http:\/\//i, 'https://');
+        input = input.replace(/^httpss?:\/\//i, 'https://');
+        input = input.replace(/\?['"]?id=/g, '?id=');
+
+        const url = new URL(input);
+        let id = url.searchParams.get('id');
+
+        if (!id) {
+          const pathParts = url.pathname.split('/').filter(p => p);
+          if (pathParts.length >= 2 && pathParts[0] === 'v') id = pathParts[1];
+        }
+
+        if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
+          id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
+        }
+
+        if (!id || id.length < 5) throw new Error();
