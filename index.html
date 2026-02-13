@@ -16,23 +16,30 @@
       background: #000;
       overflow: hidden;
       touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .video-wrapper {
       position: relative;
       width: 100%;
-      height: 100%;
-    }
-
-    #playerVideo {
-      display: block;
+      max-width: 95vw;
+      max-height: 95vh;
+      aspect-ratio: 16 / 9;
     }
 
     .big-play-btn {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    .big-play-btn > div {
       width: 90px;
       height: 90px;
       background: rgba(0,0,0,0.5);
@@ -41,16 +48,14 @@
       align-items: center;
       justify-content: center;
       font-size: 48px;
-      cursor: pointer;
-      z-index: 10;
       transition: all 0.18s ease;
       box-shadow: 0 4px 25px rgba(0,0,0,0.5);
     }
 
-    .big-play-btn:hover,
-    .big-play-btn:active {
+    .big-play-btn:hover > div,
+    .big-play-btn:active > div {
       background: rgba(59,130,246,0.75);
-      transform: translate(-50%, -50%) scale(1.08);
+      transform: scale(1.08);
     }
 
     .custom-controls {
@@ -70,9 +75,12 @@
     }
 
     #player-container:hover .custom-controls,
-    #player-container.playing .custom-controls.show-controls,
     #player-container.controls-visible .custom-controls {
       opacity: 1;
+    }
+
+    #player-container.playing .custom-controls {
+      opacity: 0;
     }
 
     .progress-bar-container {
@@ -83,6 +91,7 @@
       cursor: pointer;
       position: relative;
       margin: 0 8px;
+      overflow: hidden;
     }
 
     .progress-bar {
@@ -95,9 +104,8 @@
 
     .buffered-bar {
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
+      inset: 0;
       background: rgba(255,255,255,0.25);
-      border-radius: 3px;
       width: 0%;
       pointer-events: none;
     }
@@ -119,7 +127,6 @@
       padding: 6px;
       border-radius: 50%;
       transition: background 0.2s;
-      touch-action: manipulation;
     }
 
     button.control-btn:hover,
@@ -127,7 +134,6 @@
       background: rgba(255,255,255,0.15);
     }
 
-    /* Volume slider */
     .volume-container {
       display: flex;
       align-items: center;
@@ -150,38 +156,48 @@
       border-radius: 3px;
     }
 
-    /* Loading indicator */
     .loading-spinner {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9;
+      background: rgba(0,0,0,0.4);
+    }
+
+    .loading-spinner > div {
       width: 50px;
       height: 50px;
       border: 5px solid rgba(255,255,255,0.2);
       border-top: 5px solid #3b82f6;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      z-index: 9;
-      display: none;
     }
 
     @keyframes spin {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
-      100% { transform: translate(-50%, -50%) rotate(360deg); }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Override native controls di fullscreen (penting untuk webkit) */
+    video::-webkit-media-controls-enclosure,
+    video::-webkit-media-controls,
+    video::-webkit-media-controls-panel {
+      display: none !important;
     }
 
     @media (max-width: 500px) {
-      .big-play-btn { width: 80px; height: 80px; font-size: 42px; }
+      .big-play-btn > div { width: 80px; height: 80px; font-size: 42px; }
       .custom-controls { padding: 8px 10px 12px; gap: 8px; }
       button.control-btn { font-size: 24px; padding: 8px; }
       .volume-slider { width: 60px; }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center">
+<body class="min-h-screen flex flex-col items-center justify-center bg-black">
 
-  <!-- Generator (sama persis) -->
+  <!-- Generator -->
   <div id="generator" class="w-full max-w-md p-4">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -197,7 +213,7 @@
     </div>
   </div>
 
-  <!-- Hasil Generate (sama persis) -->
+  <!-- Hasil Generate -->
   <div id="result" class="hidden w-full max-w-md mt-6 p-4">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
@@ -231,19 +247,21 @@
 
   <!-- Player Murni -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <!-- Script iklan popunder -->
+    <!-- Iklan popunder -->
     <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
     
     <div id="player-container" tabindex="0">
       <div class="video-wrapper">
-        <video id="playerVideo" playsinline class="w-full h-full object-contain"></video>
+        <video id="playerVideo" playsinline preload="metadata" class="w-full h-full object-contain"></video>
         
-        <div id="loadingSpinner" class="loading-spinner"></div>
+        <div id="loadingSpinner" class="loading-spinner">
+          <div></div>
+        </div>
 
-        <!-- Big Play Button -->
-        <div id="bigPlayBtn" class="big-play-btn text-white">▶</div>
+        <div id="bigPlayBtn" class="big-play-btn">
+          <div>▶</div>
+        </div>
         
-        <!-- Custom Controls -->
         <div class="custom-controls">
           <button id="playPauseBtn" class="control-btn" title="Play/Pause (space)">▶</button>
           
@@ -263,7 +281,7 @@
             </div>
           </div>
           
-          <button id="fullscreenBtn" class="control-btn ml-auto" title="Fullscreen (f)">⛶</button>
+          <button id="fullscreenBtn" class="control-btn ml-auto" title="Fullscreen (f)" disabled style="opacity:0.5;">⛶</button>
         </div>
       </div>
     </div>
@@ -277,7 +295,6 @@
     let currentPlayerUrl = '';
     let hasTriggeredPopunder = false;
 
-    // Generator functions (unchanged)
     function generateVideo() {
       let input = document.getElementById('linkInput').value.trim();
       if (!input) return alert('Masukkan link dulu!');
@@ -337,20 +354,23 @@
       currentPlayerUrl = '';
     }
 
-    // PLAYER MODE
-    window.addEventListener('load', () => {
+    // PLAYER MODE - langsung dieksekusi
+    (function initPlayer() {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
 
       if (videoId && videoId.length >= 5) {
+        // Langsung sembunyikan generator & result
         document.getElementById('generator').style.display = 'none';
         document.getElementById('result').style.display = 'none';
         document.getElementById('player').classList.remove('hidden');
+        document.getElementById('player').style.display = 'flex';
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
         const container = document.getElementById('player-container');
         const video = document.getElementById('playerVideo');
-        const bigPlayBtn = document.getElementById('bigPlayBtn');
+        const spinner = document.getElementById('loadingSpinner');
+        const bigPlay = document.getElementById('bigPlayBtn');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const muteBtn = document.getElementById('muteBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -361,10 +381,8 @@
         const durationEl = document.getElementById('duration');
         const volumeSlider = document.getElementById('volumeSlider');
         const volumeFill = document.getElementById('volumeFill');
-        const loadingSpinner = document.getElementById('loadingSpinner');
 
         video.src = mp4Url;
-        video.load();
 
         function formatTime(seconds) {
           if (!seconds || isNaN(seconds)) return '00:00';
@@ -375,6 +393,7 @@
 
         video.addEventListener('loadedmetadata', () => {
           durationEl.textContent = formatTime(video.duration);
+          spinner.style.display = 'none';
         });
 
         video.addEventListener('timeupdate', () => {
@@ -387,30 +406,22 @@
         video.addEventListener('progress', () => {
           if (video.buffered.length > 0) {
             const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-            const bufferedPercent = (bufferedEnd / video.duration) * 100;
-            bufferedBar.style.width = bufferedPercent + '%';
+            const percent = (bufferedEnd / video.duration) * 100;
+            bufferedBar.style.width = percent + '%';
           }
         });
 
-        video.addEventListener('waiting', () => {
-          loadingSpinner.style.display = 'block';
-        });
-
-        video.addEventListener('playing', () => {
-          loadingSpinner.style.display = 'none';
-        });
-
-        video.addEventListener('canplay', () => {
-          bigPlayBtn.style.display = 'flex';
-          loadingSpinner.style.display = 'none';
-        });
+        video.addEventListener('waiting', () => spinner.style.display = 'flex');
+        video.addEventListener('playing', () => spinner.style.display = 'none');
+        video.addEventListener('canplay', () => spinner.style.display = 'none');
 
         video.addEventListener('error', () => {
           alert('Video gagal dimuat. Cek ID atau link asli di videy.co');
-          loadingSpinner.style.display = 'none';
+          spinner.style.display = 'none';
         });
 
-        // Play/Pause logic
+        let hasPlayed = false;
+
         function togglePlay() {
           if (video.paused || video.ended) {
             if (!hasTriggeredPopunder) {
@@ -424,84 +435,70 @@
             });
             container.classList.add('playing');
             playPauseBtn.textContent = '⏸';
-            bigPlayBtn.style.display = 'none';
+            bigPlay.style.display = 'none';
+            if (!hasPlayed) {
+              hasPlayed = true;
+              fullscreenBtn.disabled = false;
+              fullscreenBtn.style.opacity = '1';
+            }
           } else {
             video.pause();
             playPauseBtn.textContent = '▶';
-            bigPlayBtn.style.display = 'flex';
+            bigPlay.style.display = 'flex';
           }
         }
 
-        // Event listeners
-        bigPlayBtn.onclick = togglePlay;
-        playPauseBtn.onclick = togglePlay;
-        video.onclick = (e) => {
+        bigPlay.addEventListener('click', togglePlay);
+        playPauseBtn.addEventListener('click', togglePlay);
+        video.addEventListener('click', (e) => {
           if (e.target === video) togglePlay();
-        };
+        });
 
-        // Double click → fullscreen
-        video.ondblclick = () => {
-          if (!document.fullscreenElement) {
+        video.addEventListener('dblclick', () => {
+          if (hasPlayed && !document.fullscreenElement) {
             container.requestFullscreen().catch(() => {});
-          } else {
-            document.exitFullscreen();
           }
-        };
+        });
 
-        // Mute
-        muteBtn.onclick = () => {
+        muteBtn.addEventListener('click', () => {
           video.muted = !video.muted;
           muteBtn.textContent = video.muted ? '🔇' : '🔊';
           volumeFill.style.width = video.muted ? '0%' : (video.volume * 100) + '%';
-        };
+        });
 
-        // Volume slider
-        volumeSlider.onclick = (e) => {
+        volumeSlider.addEventListener('click', (e) => {
           const rect = volumeSlider.getBoundingClientRect();
           const pos = (e.clientX - rect.left) / rect.width;
           video.volume = Math.max(0, Math.min(1, pos));
           volumeFill.style.width = (video.volume * 100) + '%';
           muteBtn.textContent = video.volume === 0 ? '🔇' : '🔊';
           video.muted = false;
-        };
+        });
 
-        // Fullscreen button
-        fullscreenBtn.onclick = () => {
+        fullscreenBtn.addEventListener('click', () => {
           if (!document.fullscreenElement) {
             container.requestFullscreen().catch(() => {});
           } else {
             document.exitFullscreen();
           }
-        };
-
-        document.addEventListener('fullscreenchange', () => {
-          fullscreenBtn.textContent = document.fullscreenElement ? '⛶' : '⛶';
         });
 
-        // Progress seek
-        progressContainer.onmousedown = progressContainer.ontouchstart = (e) => {
+        progressContainer.addEventListener('pointerdown', (e) => {
           e.preventDefault();
-          const moveSeek = (ev) => {
+          const seek = (ev) => {
             const rect = progressContainer.getBoundingClientRect();
-            const clientX = ev.clientX || (ev.touches && ev.touches[0].clientX);
-            let pos = (clientX - rect.left) / rect.width;
+            const x = ev.clientX || (ev.touches && ev.touches[0].clientX);
+            let pos = (x - rect.left) / rect.width;
             pos = Math.max(0, Math.min(1, pos));
             video.currentTime = pos * video.duration;
           };
-
-          moveSeek(e);
-          const onMove = (ev) => moveSeek(ev);
-          const onUp = () => {
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('touchmove', onMove);
-            document.removeEventListener('mouseup', onUp);
-            document.removeEventListener('touchend', onUp);
-          };
-          document.addEventListener('mousemove', onMove);
-          document.addEventListener('touchmove', onMove);
-          document.addEventListener('mouseup', onUp);
-          document.addEventListener('touchend', onUp);
-        };
+          seek(e);
+          const onMove = (ev) => seek(ev);
+          document.addEventListener('pointermove', onMove);
+          document.addEventListener('pointerup', () => {
+            document.removeEventListener('pointermove', onMove);
+          }, { once: true });
+        });
 
         // Auto hide controls
         let hideTimeout;
@@ -513,28 +510,35 @@
           }, 3200);
         }
 
-        container.onmousemove = container.ontouchstart = showControls;
+        container.addEventListener('pointermove', showControls);
+        container.addEventListener('touchstart', showControls);
         showControls();
 
         // Keyboard controls
-        container.onkeydown = (e) => {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        container.addEventListener('keydown', (e) => {
+          if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
           e.preventDefault();
-          switch(e.key.toLowerCase()) {
+          switch (e.key.toLowerCase()) {
             case ' ': case 'k': togglePlay(); break;
-            case 'm': video.muted = !video.muted; muteBtn.textContent = video.muted ? '🔇' : '🔊'; break;
+            case 'm':
+              video.muted = !video.muted;
+              muteBtn.textContent = video.muted ? '🔇' : '🔊';
+              volumeFill.style.width = video.muted ? '0%' : (video.volume * 100) + '%';
+              break;
             case 'arrowright': video.currentTime += 5; break;
             case 'arrowleft': video.currentTime -= 5; break;
-            case 'f': 
-              if (!document.fullscreenElement) container.requestFullscreen();
-              else document.exitFullscreen();
+            case 'f':
+              if (hasPlayed) {
+                if (!document.fullscreenElement) container.requestFullscreen();
+                else document.exitFullscreen();
+              }
               break;
           }
-        };
+        });
 
         container.focus();
       }
-    });
+    })();
   </script>
 </body>
   </html>
