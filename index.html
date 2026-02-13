@@ -194,6 +194,20 @@
       .volume-slider { width: 60px; }
     }
   </style>
+  <script>
+    // Deteksi awal untuk hilangkan jeda: jika ada ?v=, hide generator & result segera
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('v')) {
+        document.addEventListener('DOMContentLoaded', () => {
+          document.getElementById('generator').style.display = 'none';
+          document.getElementById('result').style.display = 'none';
+          document.getElementById('player').classList.remove('hidden');
+          document.getElementById('player').style.display = 'flex';
+        });
+      }
+    })();
+  </script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center bg-black">
 
@@ -245,14 +259,14 @@
     </div>
   </div>
 
-  <!-- Player Murni -->
+  <!-- Player Murni - desain lebih modern seperti browser default / videy style -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <!-- Iklan popunder -->
     <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
     
     <div id="player-container" tabindex="0">
       <div class="video-wrapper">
-        <video id="playerVideo" playsinline preload="metadata" class="w-full h-full object-contain"></video>
+        <video id="playerVideo" playsinline preload="auto" class="w-full h-full object-contain"></video> <!-- preload auto untuk load lebih cepat -->
         
         <div id="loadingSpinner" class="loading-spinner">
           <div></div>
@@ -354,13 +368,13 @@
       currentPlayerUrl = '';
     }
 
-    // PLAYER MODE - langsung dieksekusi
+    // PLAYER MODE - eksekusi secepat mungkin, preload auto untuk kurangi jeda
     (function initPlayer() {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
 
       if (videoId && videoId.length >= 5) {
-        // Langsung sembunyikan generator & result
+        // Hide langsung
         document.getElementById('generator').style.display = 'none';
         document.getElementById('result').style.display = 'none';
         document.getElementById('player').classList.remove('hidden');
@@ -383,6 +397,7 @@
         const volumeFill = document.getElementById('volumeFill');
 
         video.src = mp4Url;
+        video.load(); // Force load segera
 
         function formatTime(seconds) {
           if (!seconds || isNaN(seconds)) return '00:00';
@@ -457,6 +472,8 @@
         video.addEventListener('dblclick', () => {
           if (hasPlayed && !document.fullscreenElement) {
             container.requestFullscreen().catch(() => {});
+          } else if (document.fullscreenElement) {
+            document.exitFullscreen();
           }
         });
 
@@ -483,6 +500,10 @@
           }
         });
 
+        document.addEventListener('fullscreenchange', () => {
+          fullscreenBtn.textContent = document.fullscreenElement ? '❎' : '⛶'; // Update ikon fullscreen
+        });
+
         progressContainer.addEventListener('pointerdown', (e) => {
           e.preventDefault();
           const seek = (ev) => {
@@ -500,14 +521,14 @@
           }, { once: true });
         });
 
-        // Auto hide controls
+        // Auto hide controls lebih smooth seperti browser
         let hideTimeout;
         function showControls() {
           container.classList.add('controls-visible');
           clearTimeout(hideTimeout);
           hideTimeout = setTimeout(() => {
             if (!video.paused) container.classList.remove('controls-visible');
-          }, 3200);
+          }, 2500); // Lebih cepat hide
         }
 
         container.addEventListener('pointermove', showControls);
