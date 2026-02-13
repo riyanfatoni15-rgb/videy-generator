@@ -2,27 +2,21 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Videy Video Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
-    video { width: 100%; height: 100%; object-fit: contain; background: black; }
-    #ad-overlay { 
-      position: absolute; inset: 0; background: rgba(0,0,0,0.75); 
-      display: flex; align-items: center; justify-content: center; 
-      color: white; font-size: 2rem; font-weight: bold; z-index: 10;
-      pointer-events: none; transition: opacity 0.4s;
-    }
-    #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 20; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 0; }
+    video { width: 100%; height: 100%; object-fit: contain; background: #000; }
     
-    /* Custom Player Style mirip Videy-like */
+    /* Mobile-first player mirip Videy: minimal, touch-friendly */
     #player-container {
       position: relative;
       width: 100%;
-      height: 100%;
+      height: 100vh;
       background: #000;
       overflow: hidden;
+      touch-action: manipulation; /* better touch */
     }
     .video-wrapper {
       position: relative;
@@ -32,51 +26,51 @@
     #playerVideo {
       display: block;
     }
-    .custom-controls {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-      padding: 10px 15px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    #player-container:hover .custom-controls,
-    #player-container.playing .custom-controls {
-      opacity: 1;
-    }
     .big-play-btn {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 90px;
-      height: 90px;
-      background: rgba(0,0,0,0.4);
+      width: 100px;
+      height: 100px;
+      background: rgba(0,0,0,0.5);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 50px;
       cursor: pointer;
-      z-index: 8;
-      transition: all 0.25s;
+      z-index: 10;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
     }
-    .big-play-btn:hover {
-      background: rgba(30, 144, 255, 0.7);
-      transform: translate(-50%, -50%) scale(1.08);
+    .big-play-btn:hover, .big-play-btn:active {
+      background: rgba(59,130,246,0.7);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+    .custom-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      padding: 12px 16px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 8;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    #player-container:hover .custom-controls,
+    #player-container.playing .custom-controls {
+      opacity: 1;
     }
     .progress-bar-container {
       flex: 1;
-      height: 6px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 3px;
+      height: 8px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 4px;
       cursor: pointer;
       position: relative;
     }
@@ -84,31 +78,33 @@
       height: 100%;
       width: 0%;
       background: #3b82f6;
-      border-radius: 3px;
+      border-radius: 4px;
     }
     .time-display {
-      font-size: 13px;
-      min-width: 90px;
+      font-size: 14px;
+      min-width: 100px;
       text-align: center;
+      white-space: nowrap;
     }
     button.control-btn {
       background: none;
       border: none;
       color: white;
-      font-size: 22px;
+      font-size: 28px;
       cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 6px;
+      padding: 6px;
+      border-radius: 50%;
+      touch-action: manipulation;
     }
-    button.control-btn:hover {
-      background: rgba(255,255,255,0.15);
+    button.control-btn:active {
+      background: rgba(255,255,255,0.2);
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center">
 
-  <!-- Generator (tidak diubah) -->
-  <div id="generator" class="w-full max-w-md">
+  <!-- Generator (sama persis) -->
+  <div id="generator" class="w-full max-w-md p-4">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
@@ -123,8 +119,8 @@
     </div>
   </div>
 
-  <!-- Hasil Generate (tidak diubah) -->
-  <div id="result" class="hidden w-full max-w-md mt-6">
+  <!-- Hasil Generate (sama persis) -->
+  <div id="result" class="hidden w-full max-w-md mt-6 p-4">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
         <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
@@ -141,7 +137,7 @@
           </button>
         </div>
 
-        <video id="preview" controls class="w-full"></video>
+        <video id="preview" controls class="w-full rounded-xl"></video>
 
         <p class="text-xs text-gray-500 text-center">
           Bagikan link di atas, saat dibuka hanya video saja.
@@ -155,54 +151,47 @@
     </div>
   </div>
 
-  <!-- Player Murni (di-upgrade jadi mirip Videy) -->
+  <!-- Player Murni (mirip Videy, mobile optimized, popunder saat klik play pertama) -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <!-- Script iklan hanya di mode player -->
+    <!-- Script iklan popunder hanya di mode player -->
     <script src="https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js"></script>
     
-    <div id="player-container" class="flex-1 relative">
+    <div id="player-container">
       <div class="video-wrapper">
         <video id="playerVideo" playsinline class="w-full h-full object-contain"></video>
         
-        <!-- Big Play Button -->
+        <!-- Big Play Button (mirip Videy) -->
         <div id="bigPlayBtn" class="big-play-btn text-white">▶</div>
         
-        <!-- Ad Overlay -->
-        <div id="ad-overlay" class="hidden">Iklan...</div>
-        
-        <!-- Loading -->
-        <div id="loading" class="hidden">
-          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        <!-- Custom Controls (muncul saat hover/touch) -->
+        <div class="custom-controls">
+          <button id="playPauseBtn" class="control-btn">▶</button>
+          
+          <div class="time-display">
+            <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
+          </div>
+          
+          <div class="progress-bar-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          
+          <button id="muteBtn" class="control-btn">🔊</button>
+          
+          <button id="fullscreenBtn" class="control-btn ml-auto">⛶</button>
         </div>
-      </div>
-
-      <!-- Custom Controls -->
-      <div class="custom-controls">
-        <button id="playPauseBtn" class="control-btn">▶</button>
-        
-        <div class="time-display">
-          <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
-        </div>
-        
-        <div class="progress-bar-container" id="progressContainer">
-          <div class="progress-bar" id="progressBar"></div>
-        </div>
-        
-        <button id="muteBtn" class="control-btn">🔊</button>
-        
-        <button id="fullscreenBtn" class="control-btn ml-auto">⛶</button>
       </div>
     </div>
 
-    <div class="p-3 text-center text-sm text-gray-500 bg-gray-900">
+    <div class="p-3 text-center text-sm text-gray-500 bg-gray-900/80">
       enjoy watching • Iklan mendukung layanan ini
     </div>
   </div>
 
   <script>
     let currentPlayerUrl = '';
+    let hasTriggeredPopunder = false; // agar popunder hanya sekali saat play pertama
 
-    // Fungsi generator tetap sama
+    // Fungsi generator & copy tetap sama
     function generateVideo() {
       let input = document.getElementById('linkInput').value.trim();
       if (!input) return alert('Masukkan link dulu!');
@@ -262,7 +251,7 @@
       currentPlayerUrl = '';
     }
 
-    // ================== PLAYER MODE DENGAN IKLAN & CUSTOM CONTROLS ==================
+    // PLAYER MODE
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -274,8 +263,6 @@
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
         const video = document.getElementById('playerVideo');
-        const adOverlay = document.getElementById('ad-overlay');
-        const loading = document.getElementById('loading');
         const bigPlayBtn = document.getElementById('bigPlayBtn');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const muteBtn = document.getElementById('muteBtn');
@@ -285,11 +272,9 @@
         const currentTimeEl = document.getElementById('currentTime');
         const durationEl = document.getElementById('duration');
 
-        loading.classList.remove('hidden');
         video.src = mp4Url;
         video.load();
 
-        // Format waktu MM:SS
         function formatTime(seconds) {
           const min = Math.floor(seconds / 60);
           const sec = Math.floor(seconds % 60);
@@ -297,29 +282,44 @@
         }
 
         video.addEventListener('loadedmetadata', () => {
-          durationEl.textContent = formatTime(video.duration);
+          durationEl.textContent = formatTime(video.duration || 0);
         });
 
         video.addEventListener('timeupdate', () => {
-          const percent = (video.currentTime / video.duration) * 100;
-          progressBar.style.width = percent + '%';
-          currentTimeEl.textContent = formatTime(video.currentTime);
+          if (video.duration) {
+            const percent = (video.currentTime / video.duration) * 100;
+            progressBar.style.width = percent + '%';
+            currentTimeEl.textContent = formatTime(video.currentTime);
+          }
         });
 
         video.addEventListener('canplay', () => {
-          loading.classList.add('hidden');
-          bigPlayBtn.style.display = 'flex'; // tampilkan big play awal
+          bigPlayBtn.style.display = 'flex';
         });
 
         video.addEventListener('error', () => {
-          loading.classList.add('hidden');
-          alert('Video gagal dimuat. Kemungkinan:\n1. ID salah\n2. Video dihapus\n3. Masalah jaringan/CORS');
+          alert('Video gagal dimuat. Cek ID atau link asli di videy.co');
         });
 
-        // Play/Pause toggle
+        // Toggle play/pause
         function togglePlay() {
           if (video.paused) {
-            video.play().catch(() => { video.muted = true; video.play(); });
+            // Trigger popunder SAAT KLIK PLAY PERTAMA
+            if (!hasTriggeredPopunder) {
+              // Script sudah di-load, cukup panggil window.open atau biarkan script handle popunder
+              // Karena script cadencebenefit biasanya listen event atau auto, tapi untuk trigger manual:
+              // Kita bisa buka dummy window lalu close (cara umum trigger popunder)
+              const pop = window.open('about:blank', '_blank');
+              if (pop) {
+                pop.close(); // trigger popunder dari script
+              }
+              hasTriggeredPopunder = true;
+            }
+
+            video.play().catch(() => {
+              video.muted = true;
+              video.play();
+            });
             document.getElementById('player-container').classList.add('playing');
             playPauseBtn.textContent = '⏸';
             bigPlayBtn.style.display = 'none';
@@ -332,9 +332,11 @@
 
         bigPlayBtn.onclick = togglePlay;
         playPauseBtn.onclick = togglePlay;
-        video.onclick = togglePlay;
+        video.onclick = (e) => {
+          if (e.target === video) togglePlay(); // klik video juga toggle
+        };
 
-        // Mute
+        // Mute toggle
         muteBtn.onclick = () => {
           video.muted = !video.muted;
           muteBtn.textContent = video.muted ? '🔇' : '🔊';
@@ -349,41 +351,14 @@
           }
         };
 
-        // Progress seek
+        // Seek progress
         progressContainer.onclick = (e) => {
           const rect = progressContainer.getBoundingClientRect();
           const pos = (e.clientX - rect.left) / rect.width;
           video.currentTime = pos * video.duration;
         };
-
-        // ------------------ IKLAN hanya di player ------------------
-        // Pre-roll
-        setTimeout(() => {
-          if (!video.paused) video.pause();
-          adOverlay.textContent = 'Iklan • Tunggu 5 detik...';
-          adOverlay.classList.remove('hidden');
-          setTimeout(() => {
-            adOverlay.classList.add('hidden');
-            togglePlay(); // mulai main setelah iklan
-          }, 5000);
-        }, 800);
-
-        // Mid-roll contoh (detik 30)
-        let midrollShown = false;
-        video.addEventListener('timeupdate', () => {
-          if (!midrollShown && video.currentTime >= 30) {
-            midrollShown = true;
-            video.pause();
-            adOverlay.textContent = 'Iklan Mid-roll • 8 detik...';
-            adOverlay.classList.remove('hidden');
-            setTimeout(() => {
-              adOverlay.classList.add('hidden');
-              video.play().catch(() => {});
-            }, 8000);
-          }
-        });
       }
     });
   </script>
 </body>
-  </html>
+</html>
