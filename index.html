@@ -17,9 +17,9 @@
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
-      <p class="mb-4 text-lg">Paste link videy.co atau CDN:</p>
-      <input id="linkInput" type="text" placeholder="cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123" 
-             class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white">
+      <p class="mb-4 text-lg">Paste link videy.co atau CDN (bisa banyak, 1 per baris):</p>
+      <textarea id="linkInput" rows="6" placeholder="cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123&#10;cdn.videy.co/XXXXX.mp4&#10;..." 
+                class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white resize-y"></textarea>
 
       <button onclick="generateVideo()" 
               class="w-full bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-800">
@@ -38,11 +38,11 @@
       <div class="space-y-6">
         <div>
           <p class="text-sm text-gray-300 mb-2">Link Custom (share ini):</p>
-          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300"></div>
+          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300 whitespace-pre-wrap max-h-60 overflow-auto"></div>
 
           <button onclick="copyLink()" 
                   class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600">
-            Copy Link
+            Copy Semua Link
           </button>
         </div>
 
@@ -69,61 +69,84 @@
   </div>
 
   <script>
-    let currentPlayerUrl = '';
+    let currentPlayerUrls = [];
 
     function generateVideo() {
-      let input = document.getElementById('linkInput').value.trim();
-      if (!input) return alert('Masukkan link dulu!');
+      const textarea = document.getElementById('linkInput');
+      const rawInput = textarea.value.trim();
+      if (!rawInput) return alert('Masukkan link dulu!');
 
-      try {
-        input = input.replace(/['"]/g, '');
-        input = input.replace(/\s+/g, '');
+      const lines = rawInput.split('\n').map(line => line.trim()).filter(line => line);
+      if (lines.length === 0) return alert('Tidak ada link yang valid');
 
-        if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
+      const results = [];
+      currentPlayerUrls = [];
 
-        input = input.replace(/^http:\/\//i, 'https://');
-        input = input.replace(/^httpss?:\/\//i, 'https://');
-        input = input.replace(/\?['"]?id=/g, '?id=');
+      for (let input of lines) {
+        try {
+          input = input.replace(/['"]/g, '');
+          input = input.replace(/\s+/g, '');
 
-        const url = new URL(input);
-        let id = url.searchParams.get('id');
+          if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
 
-        if (!id) {
-          const pathParts = url.pathname.split('/').filter(p => p);
-          if (pathParts.length >= 2 && pathParts[0] === 'v') id = pathParts[1];
+          input = input.replace(/^http:\/\//i, 'https://');
+          input = input.replace(/^httpss?:\/\//i, 'https://');
+          input = input.replace(/\?['"]?id=/g, '?id=');
+
+          const url = new URL(input);
+          let id = url.searchParams.get('id');
+
+          if (!id) {
+            const pathParts = url.pathname.split('/').filter(p => p);
+            if (pathParts.length >= 2 && pathParts[0] === 'v') id = pathParts[1];
+          }
+
+          if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
+            id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
+          }
+
+          if (!id || id.length < 5) continue; // skip yang gagal
+
+          const mp4Url = `https://cdn.videy.co/${id}.mp4`;
+          const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
+          const playerUrl = originWithoutProtocol + '?v=' + id;
+
+          results.push(playerUrl);
+          currentPlayerUrls.push(playerUrl);
+
+        } catch (e) {
+          // skip error per baris
         }
-
-        if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
-          id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
-        }
-
-        if (!id || id.length < 5) throw new Error();
-
-        const mp4Url = `https://cdn.videy.co/${id}.mp4`;
-        const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
-        currentPlayerUrl = originWithoutProtocol + '?v=' + id;
-
-        // Tampil hasil
-        document.getElementById('generator').classList.add('hidden');
-        document.getElementById('result').classList.remove('hidden');
-
-        document.getElementById('playerUrlDisplay').textContent = currentPlayerUrl;
-        document.getElementById('preview').src = mp4Url;
-
-        // Copy otomatis
-        navigator.clipboard.writeText(currentPlayerUrl).catch(() => {});
-        alert('Link custom sudah dicopy!\n' + currentPlayerUrl + '\nBagikan ini, saat dibuka hanya video saja.');
-
-      } catch (e) {
-        alert('Link tidak valid. Coba format seperti cdn.videy.co/ID.mp4 atau videy.co/v?id=XXXXXX');
       }
+
+      if (results.length === 0) {
+        return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
+      }
+
+      // Tampil hasil
+      document.getElementById('generator').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+
+      document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
+      
+      // preview pakai yang pertama saja
+      if (results.length > 0) {
+        const firstId = results[0].split('?v=')[1];
+        document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
+      }
+
+      // copy otomatis semua
+      const allLinksText = results.join('\n');
+      navigator.clipboard.writeText(allLinksText).catch(() => {});
+      alert(`Berhasil generate \( {results.length} link!\nSemua link sudah dicopy ke clipboard.\n\n \){allLinksText}`);
     }
 
     function copyLink() {
-      if (currentPlayerUrl) {
-        navigator.clipboard.writeText(currentPlayerUrl)
-          .then(() => alert('Link sudah dicopy lagi!'))
-          .catch(() => alert('Gagal copy, select manual ya.'));
+      if (currentPlayerUrls.length > 0) {
+        const allLinks = currentPlayerUrls.join('\n');
+        navigator.clipboard.writeText(allLinks)
+          .then(() => alert(`Sudah copy ${currentPlayerUrls.length} link!`))
+          .catch(() => alert('Gagal copy, select manual semua link ya.'));
       }
     }
 
@@ -132,10 +155,10 @@
       document.getElementById('generator').classList.remove('hidden');
       document.getElementById('result').classList.add('hidden');
       document.getElementById('preview').src = '';
-      currentPlayerUrl = '';
+      currentPlayerUrls = [];
     }
 
-    // Mode player murni saat ?v=ID
+    // Mode player murni saat ?v=ID (tidak diubah)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -149,9 +172,6 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // ────────────────────────────────────────────────
-        //    Popunder hanya sekali saat KLIK PLAY PERTAMA
-        // ────────────────────────────────────────────────
         let hasTriggeredPopunder = false;
 
         function loadPopunderScript() {
@@ -168,10 +188,7 @@
           if (!hasTriggeredPopunder) {
             loadPopunderScript();
           }
-        }, { once: false });   // kita pakai flag, jadi tidak perlu {once:true}
-
-        // Optional: jika ingin sangat ketat hanya sekali → bisa pakai {once: true}
-        // video.addEventListener('play', loadPopunderScript, { once: true });
+        });
       }
     });
   </script>
