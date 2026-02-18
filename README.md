@@ -1,2 +1,2 @@
-# videy-generator
+# videy-v2
 videy v2
