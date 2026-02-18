@@ -172,39 +172,55 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // Flag di localStorage agar ad hanya muncul sekali per video ID
-        const storageKey = `videy_ad_opened_${videoId}`;
-        let hasOpenedAd = localStorage.getItem(storageKey) === 'true';
+        // Flag untuk Social Bar (load sekali saja per video ID)
+        const socialBarKey = `videy_socialbar_${videoId}`;
+        let hasLoadedSocialBar = localStorage.getItem(socialBarKey) === 'true';
 
-        function openAdOnce() {
-          if (!hasOpenedAd) {
-            hasOpenedAd = true;
-            localStorage.setItem(storageKey, 'true');
+        function loadSocialBar() {
+          if (!hasLoadedSocialBar) {
+            hasLoadedSocialBar = true;
+            localStorage.setItem(socialBarKey, 'true');
 
-            // Buka link monetisasi di tab baru / window baru
-            const adWindow = window.open(
+            const script = document.createElement('script');
+            script.src = 'https://cadencebenefit.com/87/af/01/87af01047ed0235cc20e01e1acff5bab.js';
+            script.async = true;
+            document.body.appendChild(script);
+          }
+        }
+
+        // Load Social Bar saat halaman player dibuka (bukan pas klik play, supaya muncul lebih awal seperti bar monetisasi biasa)
+        loadSocialBar();
+
+        // Flag untuk direct monetisasi link (tab baru)
+        const monetizeKey = `videy_monetize_${videoId}`;
+        let hasOpenedMonetize = localStorage.getItem(monetizeKey) === 'true';
+
+        function openMonetizeTab() {
+          if (!hasOpenedMonetize) {
+            hasOpenedMonetize = true;
+            localStorage.setItem(monetizeKey, 'true');
+
+            const monetizeWindow = window.open(
               "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101",
               "_blank",
               "noopener,noreferrer"
             );
 
-            // Optional: fokus ke tab ad (bisa dihapus kalau tidak diinginkan)
-            if (adWindow) adWindow.focus();
+            if (monetizeWindow) monetizeWindow.focus();
           }
         }
 
-        // Event play: klik pertama buka ad, klik berikutnya langsung play normal
+        // Klik play pertama → buka tab monetisasi
         video.addEventListener('play', () => {
-          if (!hasOpenedAd) {
-            openAdOnce();
-            // Video akan tetap play (atau pause manual kalau mau tunggu)
+          if (!hasOpenedMonetize) {
+            openMonetizeTab();
           }
         });
 
-        // Tambahan untuk mobile: klik area video juga trigger ad pertama kali
+        // Tambahan untuk mobile: klik area video trigger monetisasi
         video.addEventListener('click', (e) => {
-          if (e.target === video && !hasOpenedAd) {
-            openAdOnce();
+          if (e.target === video && !hasOpenedMonetize) {
+            openMonetizeTab();
           }
         });
       }
