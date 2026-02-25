@@ -138,7 +138,7 @@
       // copy otomatis semua
       const allLinksText = results.join('\n');
       navigator.clipboard.writeText(allLinksText).catch(() => {});
-      alert(`Berhasil generate \( {results.length} link!\nSemua link sudah dicopy ke clipboard.\n\n \){allLinksText}`);
+      alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
     }
 
     function copyLink() {
@@ -189,10 +189,10 @@
         }
         loadSocialBar();
 
-        // === Popunder/Monetize Tab yang disempurnakan ===
+        // === Popunder/Monetize: Klik sekali saja di mana saja ===
         const monetizeKey = `videy_monetize_${videoId}`;
         const globalCapKey = 'videy_global_monetize_cap';
-        const capDurationHours = 12; // Ganti ke 12 atau 48 kalau mau test lebih ketat/longgar
+        const capDurationHours = 12; // Ganti ke 4-8 kalau mau lebih sering
 
         function canOpenMonetize() {
           const lastOpen = localStorage.getItem(globalCapKey);
@@ -209,32 +209,38 @@
         }
 
         function openMonetizeTab() {
-          // Cek per-video (opsional, bisa dihapus kalau mau global saja)
-          let hasOpenedThisVideo = localStorage.getItem(monetizeKey) === 'true';
+          const monetizeWindow = window.open(
+            "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101",
+            "_blank",
+            "noopener,noreferrer"
+          );
 
-          if (!hasOpenedThisVideo && canOpenMonetize()) {
-            localStorage.setItem(monetizeKey, 'true');
-            updateGlobalCap();
-
-            const monetizeWindow = window.open(
-              "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101",
-              "_blank",
-              "noopener,noreferrer"
-            );
-
-            if (monetizeWindow) monetizeWindow.focus();
-          }
+          if (monetizeWindow) monetizeWindow.focus();
         }
 
-        // Trigger utama: setelah video selesai + delay kecil
-        video.addEventListener('ended', () => {
-          setTimeout(() => {
-            openMonetizeTab();
-          }, 10000); // 10 detik setelah ended, biar user sempat baca "enjoy watching"
-        });
+        // Trigger: klik sekali saja di halaman (player atau di mana pun)
+        let hasTriggered = false;
 
-        // Opsional: kalau user pause & play ulang banyak, tapi tetap cap global
-        // (bisa tambah kalau mau lebih agresif, tapi rekomendasi jangan)
+        document.addEventListener('click', function handleClick() {
+          if (hasTriggered) return;
+
+          // Cek apakah sudah pernah buka untuk video ini
+          const hasOpenedThisVideo = localStorage.getItem(monetizeKey) === 'true';
+
+          if (hasOpenedThisVideo || !canOpenMonetize()) {
+            // Sudah pernah atau masih dalam cap → skip
+            return;
+          }
+
+          hasTriggered = true;
+          localStorage.setItem(monetizeKey, 'true');
+          updateGlobalCap();
+
+          openMonetizeTab();
+
+          // Hapus listener setelah trigger (biar tidak numpuk event)
+          document.removeEventListener('click', handleClick);
+        }, { once: false }); // once: false karena kita handle manual di dalam
       }
     });
   </script>
