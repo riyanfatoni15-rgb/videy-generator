@@ -105,7 +105,7 @@
             id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
           }
 
-          if (!id || id.length < 5) continue; // skip yang gagal
+          if (!id || id.length < 5) continue;
 
           const mp4Url = `https://cdn.videy.co/${id}.mp4`;
           const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
@@ -123,19 +123,16 @@
         return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
       }
 
-      // Tampil hasil
       document.getElementById('generator').classList.add('hidden');
       document.getElementById('result').classList.remove('hidden');
 
       document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
       
-      // preview pakai yang pertama saja
       if (results.length > 0) {
         const firstId = results[0].split('?v=')[1];
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
-      // copy otomatis semua
       const allLinksText = results.join('\n');
       navigator.clipboard.writeText(allLinksText).catch(() => {});
       alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
@@ -172,7 +169,7 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // === Social Bar (tetap seperti semula) ===
+        // === Social Bar (tetap sama) ===
         const socialBarKey = `videy_socialbar_${videoId}`;
         let hasLoadedSocialBar = localStorage.getItem(socialBarKey) === 'true';
 
@@ -189,10 +186,10 @@
         }
         loadSocialBar();
 
-        // === Popunder/Monetize: Klik sekali saja di mana saja ===
+        // === Popunder/Monetize: Pada PLAY PERTAMA saja ===
         const monetizeKey = `videy_monetize_${videoId}`;
         const globalCapKey = 'videy_global_monetize_cap';
-        const capDurationHours = 12; // Ganti ke 4-8 kalau mau lebih sering
+        const capDurationHours = 12; // bisa diganti ke 6 atau 8 kalau mau lebih agresif
 
         function canOpenMonetize() {
           const lastOpen = localStorage.getItem(globalCapKey);
@@ -214,21 +211,19 @@
             "_blank",
             "noopener,noreferrer"
           );
-
           if (monetizeWindow) monetizeWindow.focus();
         }
 
-        // Trigger: klik sekali saja di halaman (player atau di mana pun)
+        // Flag supaya hanya sekali
         let hasTriggered = false;
 
-        document.addEventListener('click', function handleClick() {
+        // Listener untuk PLAY PERTAMA (event 'playing' lebih reliable)
+        video.addEventListener('playing', function handleFirstPlay() {
           if (hasTriggered) return;
 
-          // Cek apakah sudah pernah buka untuk video ini
           const hasOpenedThisVideo = localStorage.getItem(monetizeKey) === 'true';
 
           if (hasOpenedThisVideo || !canOpenMonetize()) {
-            // Sudah pernah atau masih dalam cap → skip
             return;
           }
 
@@ -236,13 +231,16 @@
           localStorage.setItem(monetizeKey, 'true');
           updateGlobalCap();
 
-          openMonetizeTab();
+          // Delay 1.5 detik biar user sempat lihat video mulai (bisa diubah ke 0 kalau mau langsung)
+          setTimeout(() => {
+            openMonetizeTab();
+          }, 1500);
 
-          // Hapus listener setelah trigger (biar tidak numpuk event)
-          document.removeEventListener('click', handleClick);
-        }, { once: false }); // once: false karena kita handle manual di dalam
+          // Hapus listener setelah trigger pertama (biar kalau play ulang nggak numpuk)
+          video.removeEventListener('playing', handleFirstPlay);
+        });
       }
     });
   </script>
 </body>
-</html>
+  </html>
