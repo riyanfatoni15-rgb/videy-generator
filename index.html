@@ -9,11 +9,13 @@
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
   </style>
-  <!-- Histats.com  START (hidden counter) -->
-<a href="/" alt="" target="_blank" >
-<img  src="//sstatic1.histats.com/0.gif?5011553&101" alt="" border="0">
-<!-- Histats.com  END  -->
-  
+  <!-- Histats.com START (hidden counter) - Diperbaiki jadi valid & hidden -->
+  <div style="display:none;">
+    <a href="/" target="_blank">
+      <img src="//sstatic1.histats.com/0.gif?5011553&101" alt="" border="0">
+    </a>
+  </div>
+  <!-- Histats.com END -->
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
@@ -89,28 +91,39 @@
 
       for (let input of lines) {
         try {
-          input = input.replace(/['"]/g, '');
-          input = input.replace(/\s+/g, '');
+          // Clean input lebih agresif
+          input = input.replace(/['"]/g, '');          // hapus quote
+          input = input.replace(/\s+/g, '');           // hapus spasi ekstra
+          input = input.replace(/,$/g, '');            // hapus koma akhir kalau ada
 
           if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
-
           input = input.replace(/^http:\/\//i, 'https://');
-          input = input.replace(/^httpss?:\/\//i, 'https://');
+          input = input.replace(/^httpss?:\/\//i, 'https://'); // typo httpss
           input = input.replace(/\?['"]?id=/g, '?id=');
 
           const url = new URL(input);
           let id = url.searchParams.get('id');
 
+          // Fallback path parsing (lebih tangguh)
           if (!id) {
             const pathParts = url.pathname.split('/').filter(p => p);
-            if (pathParts.length >= 2 && pathParts[0] === 'v') id = pathParts[1];
+            if (pathParts.length >= 2 && (pathParts[0].toLowerCase() === 'v' || pathParts[0] === '')) {
+              id = pathParts[1];
+            } else if (pathParts.length >= 1) {
+              // Ambil segmen terakhir kalau bukan file .mp4
+              const last = pathParts.pop();
+              if (last && !last.toLowerCase().endsWith('.mp4') && last.length >= 5) {
+                id = last;
+              }
+            }
           }
 
+          // Khusus CDN langsung
           if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
             id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
           }
 
-          if (!id || id.length < 5) continue;
+          if (!id || id.length < 5) continue; // skip kalau ID pendek/tidak valid
 
           const mp4Url = `https://cdn.videy.co/${id}.mp4`;
           const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
@@ -120,12 +133,13 @@
           currentPlayerUrls.push(playerUrl);
 
         } catch (e) {
-          // skip error per baris
+          // skip error per baris, tapi bisa log kalau mau debug
+          console.log('Skip link invalid:', input, e);
         }
       }
 
       if (results.length === 0) {
-        return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
+        return alert('Tidak ada link yang valid. Pastikan formatnya benar (contoh: videy.co/v?id=abc123 atau cdn.videy.co/abc123.mp4).');
       }
 
       document.getElementById('generator').classList.add('hidden');
@@ -139,8 +153,13 @@
       }
 
       const allLinksText = results.join('\n');
-      navigator.clipboard.writeText(allLinksText).catch(() => {});
-      alert(`Berhasil generate \( {results.length} link!\nSemua link sudah dicopy ke clipboard.\n\n \){allLinksText}`);
+      navigator.clipboard.writeText(allLinksText)
+        .then(() => {
+          alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
+        })
+        .catch(() => {
+          alert(`Berhasil generate ${results.length} link!\nClipboard gagal, silakan select manual semua link di kotak di atas lalu copy.`);
+        });
     }
 
     function copyLink() {
@@ -160,7 +179,7 @@
       currentPlayerUrls = [];
     }
 
-    // Mode player murni saat ?v=ID
+    // Mode player murni saat ?v=ID (sama persis seperti asli)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
