@@ -67,16 +67,19 @@
     </div>
   </div>
 
-  <!-- Player Murni (saat dibuka dengan ?v=ID) -->
-  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
+  <!-- Player Murni (saat dibuka dengan ?v=ID) – ditambahkan scroll & height control -->
+  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col overflow-y-auto">
+    <!-- Video dibatasi tinggi supaya ada ruang scroll ke bawah -->
+    <div class="flex-none px-2 pt-4">
+      <video id="playerVideo" controls playsinline class="w-full max-h-[60vh] mx-auto object-contain rounded-xl"></video>
+    </div>
 
-    <!-- Native Banner BARU – tepat di bawah video (posisi natural / in-content) -->
+    <!-- Native Banner BARU – tepat di bawah video (sekarang bisa discroll penuh) -->
     <div class="p-4 text-center">
       <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
     </div>
 
-    <!-- Social Bar BARU – menggantikan yang lama, diletakkan setelah native banner -->
+    <!-- Social Bar BARU -->
     <div class="p-2 text-center">
       <script async="async" data-cfasync="false" src="https://cadencebenefit.com/6982a58a4eda97447902c154398b8963/invoke.js"></script>
       <div id="container-6982a58a4eda97447902c154398b8963"></div>
@@ -85,6 +88,9 @@
     <div class="p-4 text-center text-sm text-gray-400">
       enjoy watching
     </div>
+
+    <!-- Spacer bawah supaya scroll terasa natural (opsional, bisa dihapus kalau tidak perlu) -->
+    <div class="h-20"></div>
   </div>
 
   <script>
@@ -188,7 +194,7 @@
       currentPlayerUrls = [];
     }
 
-    // Mode player murni saat ?v=ID (sama persis, tapi iklan diganti)
+    // Mode player murni saat ?v=ID
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -202,8 +208,7 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // Social bar & native banner sudah ditambahkan langsung di HTML player
-        // Tidak perlu load manual lagi via JS karena script async sudah ada di DOM
+        // Social bar & native banner sudah ada di HTML – cukup load src video saja
       }
     });
   </script>
