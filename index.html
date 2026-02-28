@@ -68,15 +68,15 @@
   </div>
 
   <!-- Player Murni (saat dibuka dengan ?v=ID) -->
-  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
+  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col overflow-y-auto">
+    <div class="flex-none px-2 pt-4">
+      <video id="playerVideo" controls playsinline class="w-full max-h-[60vh] mx-auto object-contain rounded-xl"></video>
+    </div>
 
-    <!-- Native Banner BARU – tepat di bawah video (posisi natural / in-content) -->
     <div class="p-4 text-center">
       <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
     </div>
 
-    <!-- Social Bar BARU – menggantikan yang lama, diletakkan setelah native banner -->
     <div class="p-2 text-center">
       <script async="async" data-cfasync="false" src="https://cadencebenefit.com/6982a58a4eda97447902c154398b8963/invoke.js"></script>
       <div id="container-6982a58a4eda97447902c154398b8963"></div>
@@ -85,12 +85,12 @@
     <div class="p-4 text-center text-sm text-gray-400">
       enjoy watching
     </div>
+
+    <div class="h-20"></div>
   </div>
 
   <script>
     let currentPlayerUrls = [];
-
-    // Domain pendek dari Vercel kamu (sudah di-hardcode biar hasil generate clean)
     const baseDomain = 'videy-v2.vercel.app';
 
     function generateVideo() {
@@ -137,7 +137,7 @@
           if (!id || id.length < 5) continue;
 
           const mp4Url = `https://cdn.videy.co/${id}.mp4`;
-          const playerUrl = baseDomain + '?v=' + id;  // Hasil pendek: videy-v2.vercel.app?v=ID
+          const playerUrl = baseDomain + '?v=' + id;
 
           results.push(playerUrl);
           currentPlayerUrls.push(playerUrl);
@@ -188,22 +188,30 @@
       currentPlayerUrls = [];
     }
 
-    // Mode player murni saat ?v=ID (sama persis, tapi iklan diganti)
-    window.addEventListener('load', () => {
+    // Logic utama player: dijalankan setelah DOM full ready
+    document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
 
       if (videoId && videoId.length >= 5) {
-        document.getElementById('generator').style.display = 'none';
-        document.getElementById('result').style.display = 'none';
-        document.getElementById('player').classList.remove('hidden');
+        // Hide generator & result seketika
+        const gen = document.getElementById('generator');
+        const res = document.getElementById('result');
+        if (gen) gen.style.display = 'none';
+        if (res) res.style.display = 'none';
 
+        // Show player
+        const player = document.getElementById('player');
+        if (player) player.classList.remove('hidden');
+
+        // Set src video
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
         const video = document.getElementById('playerVideo');
-        video.src = mp4Url;
-
-        // Social bar & native banner sudah ditambahkan langsung di HTML player
-        // Tidak perlu load manual lagi via JS karena script async sudah ada di DOM
+        if (video) {
+          video.src = mp4Url;
+          // Optional: auto play jika mau (tapi browser mobile sering block)
+          // video.play().catch(() => console.log('Autoplay blocked'));
+        }
       }
     });
   </script>
