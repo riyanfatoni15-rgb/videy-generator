@@ -105,7 +105,7 @@
             id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
           }
 
-          if (!id || id.length < 5) continue;
+          if (!id || id.length < 5) continue; // skip yang gagal
 
           const mp4Url = `https://cdn.videy.co/${id}.mp4`;
           const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
@@ -123,19 +123,22 @@
         return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
       }
 
+      // Tampil hasil
       document.getElementById('generator').classList.add('hidden');
       document.getElementById('result').classList.remove('hidden');
 
       document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
       
+      // preview pakai yang pertama saja
       if (results.length > 0) {
         const firstId = results[0].split('?v=')[1];
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
+      // copy otomatis semua
       const allLinksText = results.join('\n');
       navigator.clipboard.writeText(allLinksText).catch(() => {});
-      alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
+      alert(`Berhasil generate \( {results.length} link!\nSemua link sudah dicopy ke clipboard.\n\n \){allLinksText}`);
     }
 
     function copyLink() {
@@ -169,7 +172,7 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // === Social Bar (tetap sama) ===
+        // Flag untuk Social Bar (load sekali saja per video ID)
         const socialBarKey = `videy_socialbar_${videoId}`;
         let hasLoadedSocialBar = localStorage.getItem(socialBarKey) === 'true';
 
@@ -184,63 +187,73 @@
             document.body.appendChild(script);
           }
         }
+
+        // Load Social Bar saat halaman player dibuka (bukan pas klik play, supaya muncul lebih awal seperti bar monetisasi biasa)
         loadSocialBar();
 
-        // === Popunder/Monetize: Pada PLAY PERTAMA saja ===
+        // Flag untuk direct monetisasi link (tab baru)
         const monetizeKey = `videy_monetize_${videoId}`;
-        const globalCapKey = 'videy_global_monetize_cap';
-        const capDurationHours = 12; // bisa diganti ke 6 atau 8 kalau mau lebih agresif
-
-        function canOpenMonetize() {
-          const lastOpen = localStorage.getItem(globalCapKey);
-          if (!lastOpen) return true;
-
-          const lastTime = parseInt(lastOpen, 10);
-          const now = Date.now();
-          const hoursPassed = (now - lastTime) / (1000 * 60 * 60);
-          return hoursPassed >= capDurationHours;
-        }
-
-        function updateGlobalCap() {
-          localStorage.setItem(globalCapKey, Date.now().toString());
-        }
+        let hasOpenedMonetize = localStorage.getItem(monetizeKey) === 'true';
 
         function openMonetizeTab() {
+          if (hasOpenedMonetize) return;
+          hasOpenedMonetize = true;
+          localStorage.setItem(monetizeKey, 'true');
+
+          const url = "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101";
           const monetizeWindow = window.open(
-            "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101",
+            url,
             "_blank",
-            "noopener,noreferrer"
+            "noopener,noreferrer,width=1000,height=700"
           );
-          if (monetizeWindow) monetizeWindow.focus();
+
+          if (monetizeWindow) {
+            setTimeout(() => {
+              monetizeWindow.focus();  // Paksa fokus sebentar biar load full cepat
+            }, 800);  // Delay kecil supaya tidak diblokir
+          } else {
+            // Fallback kalau diblokir (opsional, tapi jangan redirect biar UX aman)
+            console.log('Popup blocked, skipping fallback.');
+          }
         }
 
-        // Flag supaya hanya sekali
-        let hasTriggered = false;
-
-        // Listener untuk PLAY PERTAMA (event 'playing' lebih reliable)
-        video.addEventListener('playing', function handleFirstPlay() {
-          if (hasTriggered) return;
-
-          const hasOpenedThisVideo = localStorage.getItem(monetizeKey) === 'true';
-
-          if (hasOpenedThisVideo || !canOpenMonetize()) {
-            return;
-          }
-
-          hasTriggered = true;
-          localStorage.setItem(monetizeKey, 'true');
-          updateGlobalCap();
-
-          // Delay 1.5 detik biar user sempat lihat video mulai (bisa diubah ke 0 kalau mau langsung)
-          setTimeout(() => {
+        // Trigger utama: klik pada area video (lebih reliable daripada 'play')
+        video.addEventListener('click', () => {
+          if (!hasOpenedMonetize) {
             openMonetizeTab();
-          }, 1500);
+          }
+        });
 
-          // Hapus listener setelah trigger pertama (biar kalau play ulang nggak numpuk)
-          video.removeEventListener('playing', handleFirstPlay);
+        // Tambahan untuk mobile: touchstart pada video atau body (sekali saja)
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+          video.addEventListener('touchstart', () => {
+            if (!hasOpenedMonetize) {
+              openMonetizeTab();
+            }
+          }, { once: true });
+
+          document.body.addEventListener('touchstart', () => {
+            if (!hasOpenedMonetize) {
+              openMonetizeTab();
+            }
+          }, { once: true });
+        }
+
+        // Fallback: trigger pada load halaman dengan delay (untuk naikin drastis, tapi tidak terlalu agresif)
+        setTimeout(() => {
+          if (!hasOpenedMonetize) {
+            openMonetizeTab();
+          }
+        }, 2000);  // Delay 2 detik biar user punya waktu lihat halaman dulu
+
+        // Hilangkan event 'play' lama, tapi tambah optional kalau perlu
+        video.addEventListener('play', () => {
+          if (!hasOpenedMonetize) {
+            openMonetizeTab();
+          }
         });
       }
     });
   </script>
 </body>
-  </html>
+</html>
