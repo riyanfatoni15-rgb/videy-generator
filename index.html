@@ -105,7 +105,7 @@
             id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
           }
 
-          if (!id || id.length < 5) continue; // skip yang gagal
+          if (!id || id.length < 5) continue;
 
           const mp4Url = `https://cdn.videy.co/${id}.mp4`;
           const originWithoutProtocol = window.location.origin.replace(/^https?:\/\//i, '');
@@ -123,19 +123,16 @@
         return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
       }
 
-      // Tampil hasil
       document.getElementById('generator').classList.add('hidden');
       document.getElementById('result').classList.remove('hidden');
 
       document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
       
-      // preview pakai yang pertama saja
       if (results.length > 0) {
         const firstId = results[0].split('?v=')[1];
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
-      // copy otomatis semua
       const allLinksText = results.join('\n');
       navigator.clipboard.writeText(allLinksText).catch(() => {});
       alert(`Berhasil generate \( {results.length} link!\nSemua link sudah dicopy ke clipboard.\n\n \){allLinksText}`);
@@ -172,7 +169,7 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // Flag untuk Social Bar (load sekali saja per video ID)
+        // Social Bar (tetap seperti semula)
         const socialBarKey = `videy_socialbar_${videoId}`;
         let hasLoadedSocialBar = localStorage.getItem(socialBarKey) === 'true';
 
@@ -187,70 +184,88 @@
             document.body.appendChild(script);
           }
         }
-
-        // Load Social Bar saat halaman player dibuka (bukan pas klik play, supaya muncul lebih awal seperti bar monetisasi biasa)
         loadSocialBar();
 
-        // Flag untuk direct monetisasi link (tab baru)
+        // Flag untuk overlay monetize (sekali per video ID)
         const monetizeKey = `videy_monetize_${videoId}`;
-        let hasOpenedMonetize = localStorage.getItem(monetizeKey) === 'true';
+        let hasShownOverlay = localStorage.getItem(monetizeKey) === 'true';
 
-        function openMonetizeTab() {
-          if (hasOpenedMonetize) return;
-          hasOpenedMonetize = true;
+        const monetizeUrl = "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101";
+
+        function showMonetizeOverlay() {
+          if (hasShownOverlay) return;
+          hasShownOverlay = true;
           localStorage.setItem(monetizeKey, 'true');
 
-          const url = "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101";
-          const monetizeWindow = window.open(
-            url,
-            "_blank",
-            "noopener,noreferrer,width=1000,height=700"
-          );
+          // Buat overlay full screen
+          const overlay = document.createElement('div');
+          overlay.style.position = 'fixed';
+          overlay.style.top = '0';
+          overlay.style.left = '0';
+          overlay.style.width = '100%';
+          overlay.style.height = '100%';
+          overlay.style.background = 'rgba(0,0,0,0.9)';
+          overlay.style.zIndex = '9999';
+          overlay.style.display = 'flex';
+          overlay.style.alignItems = 'center';
+          overlay.style.justifyContent = 'center';
 
-          if (monetizeWindow) {
-            setTimeout(() => {
-              monetizeWindow.focus();  // Paksa fokus sebentar biar load full cepat
-            }, 800);  // Delay kecil supaya tidak diblokir
-          } else {
-            // Fallback kalau diblokir (opsional, tapi jangan redirect biar UX aman)
-            console.log('Popup blocked, skipping fallback.');
-          }
+          const iframe = document.createElement('iframe');
+          iframe.src = monetizeUrl;
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+          iframe.style.border = 'none';
+          iframe.allow = 'fullscreen';
+          overlay.appendChild(iframe);
+
+          // Tombol close
+          const closeBtn = document.createElement('button');
+          closeBtn.textContent = '× Tutup Iklan & Lanjut Nonton';
+          closeBtn.style.position = 'absolute';
+          closeBtn.style.top = '15px';
+          closeBtn.style.right = '15px';
+          closeBtn.style.padding = '12px 24px';
+          closeBtn.style.background = '#ef4444';
+          closeBtn.style.color = 'white';
+          closeBtn.style.border = 'none';
+          closeBtn.style.borderRadius = '8px';
+          closeBtn.style.fontSize = '16px';
+          closeBtn.style.cursor = 'pointer';
+          closeBtn.style.zIndex = '10000';
+          closeBtn.onclick = () => {
+            document.body.removeChild(overlay);
+            if (video.paused) video.play();  // lanjut play kalau sempat pause
+          };
+          overlay.appendChild(closeBtn);
+
+          document.body.appendChild(overlay);
+
+          // Pause video sementara selama overlay muncul
+          video.pause();
         }
 
-        // Trigger utama: klik pada area video (lebih reliable daripada 'play')
-        video.addEventListener('click', () => {
-          if (!hasOpenedMonetize) {
-            openMonetizeTab();
-          }
-        });
+        // Trigger: klik pada area video
+        video.addEventListener('click', showMonetizeOverlay);
 
-        // Tambahan untuk mobile: touchstart pada video atau body (sekali saja)
+        // Khusus mobile: touchstart
         if (/Mobi|Android/i.test(navigator.userAgent)) {
-          video.addEventListener('touchstart', () => {
-            if (!hasOpenedMonetize) {
-              openMonetizeTab();
-            }
-          }, { once: true });
-
-          document.body.addEventListener('touchstart', () => {
-            if (!hasOpenedMonetize) {
-              openMonetizeTab();
-            }
-          }, { once: true });
+          video.addEventListener('touchstart', showMonetizeOverlay, { once: true });
         }
 
-        // Fallback: trigger pada load halaman dengan delay (untuk naikin drastis, tapi tidak terlalu agresif)
+        // Delay otomatis setelah halaman load (biar user sempat nonton sedikit)
         setTimeout(() => {
-          if (!hasOpenedMonetize) {
-            openMonetizeTab();
+          if (!hasShownOverlay) {
+            showMonetizeOverlay();
           }
-        }, 2000);  // Delay 2 detik biar user punya waktu lihat halaman dulu
+        }, 4000);  // 4 detik – bisa diubah ke 6000 atau 8000 kalau mau lebih lama
 
-        // Hilangkan event 'play' lama, tapi tambah optional kalau perlu
+        // Optional: setelah video diputar 10 detik
         video.addEventListener('play', () => {
-          if (!hasOpenedMonetize) {
-            openMonetizeTab();
-          }
+          setTimeout(() => {
+            if (!hasShownOverlay) {
+              showMonetizeOverlay();
+            }
+          }, 10000);
         });
       }
     });
