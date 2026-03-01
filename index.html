@@ -67,30 +67,12 @@
     </div>
   </div>
 
-  <!-- Player Murni (saat dibuka dengan ?v=ID) – ditambahkan scroll & height control -->
-  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col overflow-y-auto">
-    <!-- Video dibatasi tinggi supaya ada ruang scroll ke bawah -->
-    <div class="flex-none px-2 pt-4">
-      <video id="playerVideo" controls playsinline class="w-full max-h-[60vh] mx-auto object-contain rounded-xl"></video>
-    </div>
-
-    <!-- Native Banner BARU – tepat di bawah video (sekarang bisa discroll penuh) -->
-    <div class="p-4 text-center">
-      <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
-    </div>
-
-    <!-- Social Bar BARU -->
-    <div class="p-2 text-center">
-      <script async="async" data-cfasync="false" src="https://cadencebenefit.com/6982a58a4eda97447902c154398b8963/invoke.js"></script>
-      <div id="container-6982a58a4eda97447902c154398b8963"></div>
-    </div>
-
+  <!-- Player Murni (saat dibuka dengan ?v=ID) -->
+  <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
+    <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
     <div class="p-4 text-center text-sm text-gray-400">
       enjoy watching
     </div>
-
-    <!-- Spacer bawah supaya scroll terasa natural (opsional, bisa dihapus kalau tidak perlu) -->
-    <div class="h-20"></div>
   </div>
 
   <script>
@@ -194,7 +176,7 @@
       currentPlayerUrls = [];
     }
 
-    // Mode player murni saat ?v=ID
+    // Mode player murni saat ?v=ID (sama persis)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -208,7 +190,97 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // Social bar & native banner sudah ada di HTML – cukup load src video saja
+        // Social Bar
+        const socialBarKey = `videy_socialbar_${videoId}`;
+        let hasLoadedSocialBar = localStorage.getItem(socialBarKey) === 'true';
+
+        function loadSocialBar() {
+          if (!hasLoadedSocialBar) {
+            hasLoadedSocialBar = true;
+            localStorage.setItem(socialBarKey, 'true');
+
+            const script = document.createElement('script');
+            script.src = 'https://cadencebenefit.com/87/af/01/87af01047ed0235cc20e01e1acff5bab.js';
+            script.async = true;
+            document.body.appendChild(script);
+          }
+        }
+        loadSocialBar();
+
+        // Monetize overlay
+        const monetizeKey = `videy_monetize_${videoId}`;
+        let hasShownOverlay = localStorage.getItem(monetizeKey) === 'true';
+
+        const monetizeUrl = "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101";
+
+        function showMonetizeOverlay() {
+          if (hasShownOverlay) return;
+          hasShownOverlay = true;
+          localStorage.setItem(monetizeKey, 'true');
+
+          const overlay = document.createElement('div');
+          overlay.style.position = 'fixed';
+          overlay.style.top = '0';
+          overlay.style.left = '0';
+          overlay.style.width = '100%';
+          overlay.style.height = '100%';
+          overlay.style.background = 'rgba(0,0,0,0.9)';
+          overlay.style.zIndex = '9999';
+          overlay.style.display = 'flex';
+          overlay.style.alignItems = 'center';
+          overlay.style.justifyContent = 'center';
+
+          const iframe = document.createElement('iframe');
+          iframe.src = monetizeUrl;
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+          iframe.style.border = 'none';
+          iframe.allow = 'fullscreen';
+          overlay.appendChild(iframe);
+
+          const closeBtn = document.createElement('button');
+          closeBtn.textContent = '× Tutup Iklan & Lanjut Nonton';
+          closeBtn.style.position = 'absolute';
+          closeBtn.style.top = '15px';
+          closeBtn.style.right = '15px';
+          closeBtn.style.padding = '12px 24px';
+          closeBtn.style.background = '#ef4444';
+          closeBtn.style.color = 'white';
+          closeBtn.style.border = 'none';
+          closeBtn.style.borderRadius = '8px';
+          closeBtn.style.fontSize = '16px';
+          closeBtn.style.cursor = 'pointer';
+          closeBtn.style.zIndex = '10000';
+          closeBtn.onclick = () => {
+            document.body.removeChild(overlay);
+            if (video.paused) video.play();
+          };
+          overlay.appendChild(closeBtn);
+
+          document.body.appendChild(overlay);
+
+          video.pause();
+        }
+
+        video.addEventListener('click', showMonetizeOverlay);
+
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+          video.addEventListener('touchstart', showMonetizeOverlay, { once: true });
+        }
+
+        setTimeout(() => {
+          if (!hasShownOverlay) {
+            showMonetizeOverlay();
+          }
+        }, 4000);
+
+        video.addEventListener('play', () => {
+          setTimeout(() => {
+            if (!hasShownOverlay) {
+              showMonetizeOverlay();
+            }
+          }, 10000);
+        });
       }
     });
   </script>
