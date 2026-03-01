@@ -13,7 +13,7 @@
       border-top: 1px solid #334155; 
     }
   </style>
-  <!-- Histats.com START (hidden counter) - Sudah fix -->
+  <!-- Histats.com START (hidden counter) -->
   <div style="display:none;">
     <a href="/" target="_blank">
       <img src="//sstatic1.histats.com/0.gif?5011553&101" alt="" border="0">
@@ -23,7 +23,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator -->
+  <!-- Generator (tidak disentuh sama sekali) -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -39,7 +39,7 @@
     </div>
   </div>
 
-  <!-- Hasil Generate -->
+  <!-- Hasil Generate (tidak disentuh) -->
   <div id="result" class="hidden w-full max-w-md mt-6">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
@@ -71,21 +71,20 @@
     </div>
   </div>
 
-  <!-- Player Murni (saat dibuka dengan ?v=ID) -->
+  <!-- Player Murni – hanya di sini ada sosial bar + iklan -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
     
-    <!-- Iklan Sosial Bar + script iklan -->
+    <!-- Sosial Bar + Iklan hanya muncul di player -->
     <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
-      <!-- Script iklan yang diminta (muncul di area player) -->
+      <!-- Script iklan – hanya di-load saat player aktif -->
       <div class="w-full max-w-[728px] mx-auto">
         <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
       </div>
 
-      <!-- Link Telegram (tetap dipertahankan sebagai elemen sosial) -->
+      <!-- Link Telegram -->
       <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
          class="p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 hover:from-blue-800/60 hover:to-indigo-800/60 transition-colors rounded-xl w-full max-w-md">
-        <!-- Logo Telegram -->
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.29 8.18L13.39 15.08C13.28 15.32 13.07 15.49 12.82 15.55C12.57 15.61 12.3 15.55 12.09 15.39L10.5 14.12L9.5 16.5L7.5 16.5L10.09 10.92C10.2 10.68 10.41 10.51 10.66 10.45C10.91 10.39 11.18 10.45 11.39 10.61L13 11.88L14 9.5L16 9.5L13.41 15.08C13.3 15.32 13.09 15.49 12.84 15.55C12.59 15.61 12.32 15.55 12.11 15.39L10.5 14.12L9.5 16.5L7.5 16.5L10.09 10.92C10.2 10.68 10.41 10.51 10.66 10.45C10.91 10.39 11.18 10.45 11.39 10.61L13 11.88L14 9.5L16 9.5L16.29 8.18Z" fill="#0088CC"/>
         </svg>
@@ -96,8 +95,6 @@
 
   <script>
     let currentPlayerUrls = [];
-
-    // Domain pendek dari Vercel kamu (sudah di-hardcode biar hasil generate clean)
     const baseDomain = 'videy-v2.vercel.app';
 
     function generateVideo() {
@@ -195,7 +192,7 @@
       currentPlayerUrls = [];
     }
 
-    // Mode player murni saat ?v=ID
+    // Deteksi mode player
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -206,11 +203,8 @@
         document.getElementById('player').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        const video = document.getElementById('playerVideo');
-        video.src = mp4Url;
-
-        // AUTO REDIRECT SUDAH DIHAPUS SESUAI PERMINTAAN
-        // Iklan sekarang hanya berupa script di social-bar
+        document.getElementById('playerVideo').src = mp4Url;
+        // Tidak ada auto-redirect, iklan hanya di-load di player
       }
     });
   </script>
