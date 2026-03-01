@@ -9,7 +9,7 @@
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
   </style>
-  <!-- Histats.com START (hidden counter) -->
+  <!-- Histats.com START (hidden counter) - Sudah fix -->
   <div style="display:none;">
     <a href="/" target="_blank">
       <img src="//sstatic1.histats.com/0.gif?5011553&101" alt="" border="0">
@@ -19,7 +19,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator (sama) -->
+  <!-- Generator -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -35,21 +35,51 @@
     </div>
   </div>
 
-  <!-- Hasil Generate (sama) -->
+  <!-- Hasil Generate -->
   <div id="result" class="hidden w-full max-w-md mt-6">
-    <!-- ... isi sama seperti sebelumnya ... -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
+      <div class="flex items-center justify-center mb-6">
+        <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <p class="text-sm text-gray-300 mb-2">Link Custom (share ini):</p>
+          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300 whitespace-pre-wrap max-h-60 overflow-auto"></div>
+
+          <button onclick="copyLink()" 
+                  class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600">
+            Copy Semua Link
+          </button>
+        </div>
+
+        <video id="preview" controls class="w-full"></video>
+
+        <p class="text-xs text-gray-500 text-center">
+          Bagikan link di atas, saat dibuka hanya video saja.
+        </p>
+      </div>
+
+      <button onclick="resetGenerator()" 
+              class="mt-6 w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500">
+        Generate Lagi
+      </button>
+    </div>
   </div>
 
-  <!-- Player Murni (sama, tanpa overlay custom) -->
+  <!-- Player Murni (saat dibuka dengan ?v=ID) – ditambahkan scroll & height control -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col overflow-y-auto">
+    <!-- Video dibatasi tinggi supaya ada ruang scroll ke bawah -->
     <div class="flex-none px-2 pt-4">
       <video id="playerVideo" controls playsinline class="w-full max-h-[60vh] mx-auto object-contain rounded-xl"></video>
     </div>
 
+    <!-- Native Banner BARU – tepat di bawah video (sekarang bisa discroll penuh) -->
     <div class="p-4 text-center">
       <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
     </div>
 
+    <!-- Social Bar BARU -->
     <div class="p-2 text-center">
       <script async="async" data-cfasync="false" src="https://cadencebenefit.com/6982a58a4eda97447902c154398b8963/invoke.js"></script>
       <div id="container-6982a58a4eda97447902c154398b8963"></div>
@@ -59,19 +89,113 @@
       enjoy watching
     </div>
 
+    <!-- Spacer bawah supaya scroll terasa natural (opsional, bisa dihapus kalau tidak perlu) -->
     <div class="h-20"></div>
   </div>
 
   <script>
     let currentPlayerUrls = [];
+
+    // Domain pendek dari Vercel kamu (sudah di-hardcode biar hasil generate clean)
     const baseDomain = 'videy-v2.vercel.app';
-    const verificationUrl = 'https://cadencebenefit.com/xsjwg7s322?key=092493368054eca03f174817b36bc415';
 
-    // Fungsi generateVideo, copyLink, resetGenerator SAMA seperti sebelumnya
-    // ... paste bagian itu di sini tanpa ubah ...
+    function generateVideo() {
+      const textarea = document.getElementById('linkInput');
+      const rawInput = textarea.value.trim();
+      if (!rawInput) return alert('Masukkan link dulu!');
 
-    // Logic player + redirect ke direct link untuk verifikasi
-    document.addEventListener('DOMContentLoaded', () => {
+      const lines = rawInput.split('\n').map(line => line.trim()).filter(line => line);
+      if (lines.length === 0) return alert('Tidak ada link yang valid');
+
+      const results = [];
+      currentPlayerUrls = [];
+
+      for (let input of lines) {
+        try {
+          input = input.replace(/['"]/g, '');
+          input = input.replace(/\s+/g, '');
+          input = input.replace(/,$/g, '');
+
+          if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
+          input = input.replace(/^http:\/\//i, 'https://');
+          input = input.replace(/^httpss?:\/\//i, 'https://');
+          input = input.replace(/\?['"]?id=/g, '?id=');
+
+          const url = new URL(input);
+          let id = url.searchParams.get('id');
+
+          if (!id) {
+            const pathParts = url.pathname.split('/').filter(p => p);
+            if (pathParts.length >= 2 && (pathParts[0].toLowerCase() === 'v' || pathParts[0] === '')) {
+              id = pathParts[1];
+            } else if (pathParts.length >= 1) {
+              const last = pathParts.pop();
+              if (last && !last.toLowerCase().endsWith('.mp4') && last.length >= 5) {
+                id = last;
+              }
+            }
+          }
+
+          if (!id && url.hostname.includes('videy.co') && url.pathname.endsWith('.mp4')) {
+            id = url.pathname.split('/').pop().replace(/\.mp4$/i, '');
+          }
+
+          if (!id || id.length < 5) continue;
+
+          const mp4Url = `https://cdn.videy.co/${id}.mp4`;
+          const playerUrl = baseDomain + '?v=' + id;  // Hasil pendek: videy-v2.vercel.app?v=ID
+
+          results.push(playerUrl);
+          currentPlayerUrls.push(playerUrl);
+
+        } catch (e) {
+          console.log('Skip link invalid:', input, e);
+        }
+      }
+
+      if (results.length === 0) {
+        return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
+      }
+
+      document.getElementById('generator').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+
+      document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
+      
+      if (results.length > 0) {
+        const firstId = results[0].split('?v=')[1];
+        document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
+      }
+
+      const allLinksText = results.join('\n');
+      navigator.clipboard.writeText(allLinksText)
+        .then(() => {
+          alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
+        })
+        .catch(() => {
+          alert(`Berhasil generate ${results.length} link!\nClipboard gagal, select manual ya.`);
+        });
+    }
+
+    function copyLink() {
+      if (currentPlayerUrls.length > 0) {
+        const allLinks = currentPlayerUrls.join('\n');
+        navigator.clipboard.writeText(allLinks)
+          .then(() => alert(`Sudah copy ${currentPlayerUrls.length} link!`))
+          .catch(() => alert('Gagal copy, select manual semua link ya.'));
+      }
+    }
+
+    function resetGenerator() {
+      document.getElementById('linkInput').value = '';
+      document.getElementById('generator').classList.remove('hidden');
+      document.getElementById('result').classList.add('hidden');
+      document.getElementById('preview').src = '';
+      currentPlayerUrls = [];
+    }
+
+    // Mode player murni saat ?v=ID
+    window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
 
@@ -84,34 +208,9 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // Key unik per video
-        const ageVerifiedKey = `age_verified_${videoId}`;
-        const isVerified = localStorage.getItem(ageVerifiedKey) === 'true';
-
-        if (!isVerified) {
-          // Tunggu play pertama, lalu redirect setelah 2.5 detik
-          video.addEventListener('play', () => {
-            setTimeout(() => {
-              if (localStorage.getItem(ageVerifiedKey) !== 'true') {
-                // Redirect ke direct link untuk verifikasi
-                window.location.href = verificationUrl + '&return=' + encodeURIComponent(window.location.href);
-                // Optional: tambah &return= untuk balik otomatis setelah konfirmasi (jika halaman direct support)
-              }
-            }, 2500);
-          }, { once: true });
-        } else {
-          // Sudah verified → auto play
-          video.play().catch(() => console.log('Autoplay diblokir'));
-        }
-
-        // Jika balik dari direct link dengan parameter sukses (opsional, jika direct handle redirect balik)
-        if (params.get('verified') === '1') {
-          localStorage.setItem(ageVerifiedKey, 'true');
-          video.play();
-        }
+        // Social bar & native banner sudah ada di HTML – cukup load src video saja
       }
     });
   </script>
 </body>
-</html></body>
 </html>
