@@ -176,7 +176,7 @@
       currentPlayerUrls = [];
     }
 
-    // Mode player murni saat ?v=ID (sama persis)
+    // Mode player murni saat ?v=ID
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -190,97 +190,33 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // Social Bar
-        const socialBarKey = `videy_socialbar_${videoId}`;
-        let hasLoadedSocialBar = localStorage.getItem(socialBarKey) === 'true';
+        // AUTO REDIRECT KE SMARTLINK SETELAH 2–3 DETIK
+        const smartlink = "https://example.com/smartlink?key=yourkey123"; // GANTI DENGAN SMARTLINK ANDA YANG SEBENARNYA
 
-        function loadSocialBar() {
-          if (!hasLoadedSocialBar) {
-            hasLoadedSocialBar = true;
-            localStorage.setItem(socialBarKey, 'true');
-
-            const script = document.createElement('script');
-            script.src = 'https://cadencebenefit.com/87/af/01/87af01047ed0235cc20e01e1acff5bab.js';
-            script.async = true;
-            document.body.appendChild(script);
-          }
-        }
-        loadSocialBar();
-
-        // Monetize overlay
-        const monetizeKey = `videy_monetize_${videoId}`;
-        let hasShownOverlay = localStorage.getItem(monetizeKey) === 'true';
-
-        const monetizeUrl = "https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101";
-
-        function showMonetizeOverlay() {
-          if (hasShownOverlay) return;
-          hasShownOverlay = true;
-          localStorage.setItem(monetizeKey, 'true');
-
-          const overlay = document.createElement('div');
-          overlay.style.position = 'fixed';
-          overlay.style.top = '0';
-          overlay.style.left = '0';
-          overlay.style.width = '100%';
-          overlay.style.height = '100%';
-          overlay.style.background = 'rgba(0,0,0,0.9)';
-          overlay.style.zIndex = '9999';
-          overlay.style.display = 'flex';
-          overlay.style.alignItems = 'center';
-          overlay.style.justifyContent = 'center';
-
-          const iframe = document.createElement('iframe');
-          iframe.src = monetizeUrl;
-          iframe.style.width = '100%';
-          iframe.style.height = '100%';
-          iframe.style.border = 'none';
-          iframe.allow = 'fullscreen';
-          overlay.appendChild(iframe);
-
-          const closeBtn = document.createElement('button');
-          closeBtn.textContent = '× Tutup Iklan & Lanjut Nonton';
-          closeBtn.style.position = 'absolute';
-          closeBtn.style.top = '15px';
-          closeBtn.style.right = '15px';
-          closeBtn.style.padding = '12px 24px';
-          closeBtn.style.background = '#ef4444';
-          closeBtn.style.color = 'white';
-          closeBtn.style.border = 'none';
-          closeBtn.style.borderRadius = '8px';
-          closeBtn.style.fontSize = '16px';
-          closeBtn.style.cursor = 'pointer';
-          closeBtn.style.zIndex = '10000';
-          closeBtn.onclick = () => {
-            document.body.removeChild(overlay);
-            if (video.paused) video.play();
-          };
-          overlay.appendChild(closeBtn);
-
-          document.body.appendChild(overlay);
-
-          video.pause();
-        }
-
-        video.addEventListener('click', showMonetizeOverlay);
-
-        if (/Mobi|Android/i.test(navigator.userAgent)) {
-          video.addEventListener('touchstart', showMonetizeOverlay, { once: true });
-        }
+        const randomDelay = Math.floor(Math.random() * (3000 - 2200 + 1)) + 2200; // 2200–3000 ms
 
         setTimeout(() => {
-          if (!hasShownOverlay) {
-            showMonetizeOverlay();
-          }
-        }, 4000);
+          window.location.href = smartlink;
+        }, randomDelay);
 
-        video.addEventListener('play', () => {
-          setTimeout(() => {
-            if (!hasShownOverlay) {
-              showMonetizeOverlay();
-            }
-          }, 10000);
-        });
+        // Pesan kecil (opsional, bisa dihapus jika tidak diinginkan)
+        const msg = document.createElement('div');
+        msg.textContent = 'Sedang mengarahkan...';
+        msg.style.position = 'absolute';
+        msg.style.top = '20px';
+        msg.style.left = '50%';
+        msg.style.transform = 'translateX(-50%)';
+        msg.style.background = 'rgba(0,0,0,0.7)';
+        msg.style.padding = '10px 20px';
+        msg.style.borderRadius = '8px';
+        msg.style.fontSize = '14px';
+        msg.style.zIndex = '100';
+        document.body.appendChild(msg);
+
+        // Hilangkan pesan setelah redirect (jika redirect gagal)
+        setTimeout(() => {
+          if (msg.parentNode) msg.parentNode.removeChild(msg);
+        }, randomDelay + 1000);
       }
     });
   </script>
