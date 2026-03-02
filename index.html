@@ -23,7 +23,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator (tidak disentuh) -->
+  <!-- Generator -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -39,7 +39,7 @@
     </div>
   </div>
 
-  <!-- Hasil Generate (tidak disentuh) -->
+  <!-- Hasil Generate -->
   <div id="result" class="hidden w-full max-w-md mt-6">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
@@ -71,18 +71,15 @@
     </div>
   </div>
 
-  <!-- Player Murni – hanya di sini ada sosial bar + iklan -->
+  <!-- Player Murni -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
     
-    <!-- Sosial Bar + Iklan hanya muncul di player -->
     <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
-      <!-- Script iklan banner -->
       <div class="w-full max-w-[728px] mx-auto">
         <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
       </div>
 
-      <!-- Link Telegram -->
       <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
          class="p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 hover:from-blue-800/60 hover:to-indigo-800/60 transition-colors rounded-xl w-full max-w-md">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -154,29 +151,21 @@
         return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
       }
 
-      // --- Logika acak + WAJIB minimal 3 promo ---
-      const mixed = [];
-      const minPromo = 3;
-      const maxPromo = Math.max(minPromo, playerUrls.length + 3); // bisa lebih kalau banyak link
+      // --- Promo tepat 3 kali + posisi acak ---
+      const mixed = [...playerUrls];  // mulai dari semua player link
+      const promoCount = 3;           // FIXED tepat 3
 
-      // Jumlah promo total: minimal 3, random sampai maxPromo
-      const totalPromo = minPromo + Math.floor(Math.random() * (maxPromo - minPromo + 1));
+      // Buat 3 promo
+      const promos = Array(promoCount).fill(promoDomain);
 
-      const promosArray = Array(totalPromo).fill(promoDomain);
-
-      // Gabung semua (player + promo)
-      const allItems = [...playerUrls, ...promosArray];
-
-      // Acak posisi secara random (Fisher-Yates shuffle)
-      for (let i = allItems.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allItems[i], allItems[j]] = [allItems[j], allItems[i]];
+      // Sisipkan promo di posisi acak (termasuk awal/akhir)
+      for (let promo of promos) {
+        // Pilih indeks acak dari 0 sampai panjang array saat ini (bisa di akhir)
+        const insertIndex = Math.floor(Math.random() * (mixed.length + 1));
+        mixed.splice(insertIndex, 0, promo);
       }
 
-      // Masukkan ke display
-      allItems.forEach(item => mixed.push(item));
-
-      // Tampilkan hasil acak
+      // Tampilkan hasil
       document.getElementById('playerUrlDisplay').textContent = mixed.join('\n');
 
       document.getElementById('generator').classList.add('hidden');
@@ -187,11 +176,11 @@
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
-      // Copy hanya link player (tanpa promo)
+      // Copy hanya player links (tanpa promo)
       const allPlayerLinks = currentPlayerUrls.join('\n');
       navigator.clipboard.writeText(allPlayerLinks)
         .then(() => {
-          alert(`Berhasil generate ${currentPlayerUrls.length} video!\nLink player sudah dicopy ke clipboard.\nPromo acak minimal 3 kali di tampilan`);
+          alert(`Berhasil generate ${currentPlayerUrls.length} video!\nLink player sudah dicopy.\nPromo tepat 3 kali (posisi acak)`);
         })
         .catch(() => {
           alert(`Berhasil generate ${currentPlayerUrls.length} link!\nClipboard gagal, select manual ya.`);
@@ -215,7 +204,6 @@
       currentPlayerUrls = [];
     }
 
-    // Deteksi mode player + setup popunder sekali saja (tidak diubah)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
