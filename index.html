@@ -23,7 +23,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator (tidak disentuh sama sekali) -->
+  <!-- Generator (tidak disentuh) -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -77,7 +77,7 @@
     
     <!-- Sosial Bar + Iklan hanya muncul di player -->
     <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
-      <!-- Script iklan banner – tetap seperti semula -->
+      <!-- Script iklan banner -->
       <div class="w-full max-w-[728px] mx-auto">
         <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
       </div>
@@ -96,6 +96,7 @@
   <script>
     let currentPlayerUrls = [];
     const baseDomain = 'videy-v2.vercel.app';
+    const promoDomain = 'videy-v2-sandy.vercel.app';
 
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
@@ -105,7 +106,7 @@
       const lines = rawInput.split('\n').map(line => line.trim()).filter(line => line);
       if (lines.length === 0) return alert('Tidak ada link yang valid');
 
-      const results = [];
+      const playerUrls = [];
       currentPlayerUrls = [];
 
       for (let input of lines) {
@@ -140,10 +141,8 @@
 
           if (!id || id.length < 5) continue;
 
-          const mp4Url = `https://cdn.videy.co/${id}.mp4`;
           const playerUrl = baseDomain + '?v=' + id;
-
-          results.push(playerUrl);
+          playerUrls.push(playerUrl);
           currentPlayerUrls.push(playerUrl);
 
         } catch (e) {
@@ -151,27 +150,51 @@
         }
       }
 
-      if (results.length === 0) {
+      if (playerUrls.length === 0) {
         return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
       }
+
+      // --- Logika acak + WAJIB minimal 3 promo ---
+      const mixed = [];
+      const minPromo = 3;
+      const maxPromo = Math.max(minPromo, playerUrls.length + 3); // bisa lebih kalau banyak link
+
+      // Jumlah promo total: minimal 3, random sampai maxPromo
+      const totalPromo = minPromo + Math.floor(Math.random() * (maxPromo - minPromo + 1));
+
+      const promosArray = Array(totalPromo).fill(promoDomain);
+
+      // Gabung semua (player + promo)
+      const allItems = [...playerUrls, ...promosArray];
+
+      // Acak posisi secara random (Fisher-Yates shuffle)
+      for (let i = allItems.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allItems[i], allItems[j]] = [allItems[j], allItems[i]];
+      }
+
+      // Masukkan ke display
+      allItems.forEach(item => mixed.push(item));
+
+      // Tampilkan hasil acak
+      document.getElementById('playerUrlDisplay').textContent = mixed.join('\n');
 
       document.getElementById('generator').classList.add('hidden');
       document.getElementById('result').classList.remove('hidden');
 
-      document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
-      
-      if (results.length > 0) {
-        const firstId = results[0].split('?v=')[1];
+      if (currentPlayerUrls.length > 0) {
+        const firstId = currentPlayerUrls[0].split('?v=')[1];
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
-      const allLinksText = results.join('\n');
-      navigator.clipboard.writeText(allLinksText)
+      // Copy hanya link player (tanpa promo)
+      const allPlayerLinks = currentPlayerUrls.join('\n');
+      navigator.clipboard.writeText(allPlayerLinks)
         .then(() => {
-          alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
+          alert(`Berhasil generate ${currentPlayerUrls.length} video!\nLink player sudah dicopy ke clipboard.\nPromo acak minimal 3 kali di tampilan`);
         })
         .catch(() => {
-          alert(`Berhasil generate ${results.length} link!\nClipboard gagal, select manual ya.`);
+          alert(`Berhasil generate ${currentPlayerUrls.length} link!\nClipboard gagal, select manual ya.`);
         });
     }
 
@@ -179,7 +202,7 @@
       if (currentPlayerUrls.length > 0) {
         const allLinks = currentPlayerUrls.join('\n');
         navigator.clipboard.writeText(allLinks)
-          .then(() => alert(`Sudah copy ${currentPlayerUrls.length} link!`))
+          .then(() => alert(`Sudah copy ${currentPlayerUrls.length} link player!`))
           .catch(() => alert('Gagal copy, select manual semua link ya.'));
       }
     }
@@ -192,7 +215,7 @@
       currentPlayerUrls = [];
     }
 
-    // Deteksi mode player + setup popunder sekali saja
+    // Deteksi mode player + setup popunder sekali saja (tidak diubah)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -206,23 +229,18 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // Setup popunder: hanya sekali, delay 4.5 detik setelah play pertama
         if (!sessionStorage.getItem('popUnderShown')) {
           videoElement.addEventListener('play', function popHandler() {
             setTimeout(() => {
-              // Load dan jalankan script popunder hanya sekali
               const script = document.createElement('script');
               script.src = 'https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js';
               script.async = true;
               document.body.appendChild(script);
 
-              // Tandai sudah muncul (akan hilang saat tutup browser)
               sessionStorage.setItem('popUnderShown', 'true');
-
-              // Hapus listener supaya tidak trigger ulang kalau play lagi
               videoElement.removeEventListener('play', popHandler);
-            }, 4500); // Delay 4.5 detik
-          }, { once: true }); // once: true biar event listener cuma dipakai sekali
+            }, 4500);
+          }, { once: true });
         }
       }
     });
