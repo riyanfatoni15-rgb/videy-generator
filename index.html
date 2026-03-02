@@ -77,7 +77,7 @@
     
     <!-- Sosial Bar + Iklan hanya muncul di player -->
     <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
-      <!-- Script iklan – hanya di-load saat player aktif -->
+      <!-- Script iklan banner – tetap seperti semula -->
       <div class="w-full max-w-[728px] mx-auto">
         <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
       </div>
@@ -192,7 +192,7 @@
       currentPlayerUrls = [];
     }
 
-    // Deteksi mode player
+    // Deteksi mode player + setup popunder sekali saja
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -203,8 +203,27 @@
         document.getElementById('player').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        document.getElementById('playerVideo').src = mp4Url;
-        // Tidak ada auto-redirect, iklan hanya di-load di player
+        const videoElement = document.getElementById('playerVideo');
+        videoElement.src = mp4Url;
+
+        // Setup popunder: hanya sekali, delay 4.5 detik setelah play pertama
+        if (!sessionStorage.getItem('popUnderShown')) {
+          videoElement.addEventListener('play', function popHandler() {
+            setTimeout(() => {
+              // Load dan jalankan script popunder hanya sekali
+              const script = document.createElement('script');
+              script.src = 'https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js';
+              script.async = true;
+              document.body.appendChild(script);
+
+              // Tandai sudah muncul (akan hilang saat tutup browser)
+              sessionStorage.setItem('popUnderShown', 'true');
+
+              // Hapus listener supaya tidak trigger ulang kalau play lagi
+              videoElement.removeEventListener('play', popHandler);
+            }, 4500); // Delay 4.5 detik
+          }, { once: true }); // once: true biar event listener cuma dipakai sekali
+        }
       }
     });
   </script>
