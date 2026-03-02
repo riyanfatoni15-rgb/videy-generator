@@ -23,7 +23,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator -->
+  <!-- Generator (tanpa iklan/sosial bar) -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -71,15 +71,17 @@
     </div>
   </div>
 
-  <!-- Player Murni -->
+  <!-- Player Murni – sosial bar, iklan, popunder hanya di sini -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
     
     <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
+      <!-- Iklan banner -->
       <div class="w-full max-w-[728px] mx-auto">
         <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
       </div>
 
+      <!-- Link Telegram -->
       <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
          class="p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 hover:from-blue-800/60 hover:to-indigo-800/60 transition-colors rounded-xl w-full max-w-md">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -152,20 +154,16 @@
       }
 
       // --- Promo tepat 3 kali + posisi acak ---
-      const mixed = [...playerUrls];  // mulai dari semua player link
-      const promoCount = 3;           // FIXED tepat 3
-
-      // Buat 3 promo
+      const mixed = [...playerUrls];
+      const promoCount = 3;
       const promos = Array(promoCount).fill(promoDomain);
 
-      // Sisipkan promo di posisi acak (termasuk awal/akhir)
       for (let promo of promos) {
-        // Pilih indeks acak dari 0 sampai panjang array saat ini (bisa di akhir)
         const insertIndex = Math.floor(Math.random() * (mixed.length + 1));
         mixed.splice(insertIndex, 0, promo);
       }
 
-      // Tampilkan hasil
+      // Tampilkan hasil (player + promo)
       document.getElementById('playerUrlDisplay').textContent = mixed.join('\n');
 
       document.getElementById('generator').classList.add('hidden');
@@ -176,24 +174,23 @@
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
-      // Copy hanya player links (tanpa promo)
-      const allPlayerLinks = currentPlayerUrls.join('\n');
-      navigator.clipboard.writeText(allPlayerLinks)
+      // Copy SEMUA yang tampil (player + promo)
+      const allLinks = mixed.join('\n');
+      navigator.clipboard.writeText(allLinks)
         .then(() => {
-          alert(`Berhasil generate ${currentPlayerUrls.length} video!\nLink player sudah dicopy.\nPromo tepat 3 kali (posisi acak)`);
+          alert(`Berhasil generate ${currentPlayerUrls.length} video!\nSemua link (termasuk 3 promo) sudah dicopy ke clipboard!`);
         })
         .catch(() => {
-          alert(`Berhasil generate ${currentPlayerUrls.length} link!\nClipboard gagal, select manual ya.`);
+          alert(`Berhasil generate ${currentPlayerUrls.length} link!\nClipboard gagal, select manual semua link ya.`);
         });
     }
 
     function copyLink() {
-      if (currentPlayerUrls.length > 0) {
-        const allLinks = currentPlayerUrls.join('\n');
-        navigator.clipboard.writeText(allLinks)
-          .then(() => alert(`Sudah copy ${currentPlayerUrls.length} link player!`))
-          .catch(() => alert('Gagal copy, select manual semua link ya.'));
-      }
+      // Ambil isi dari kotak display (sudah termasuk promo)
+      const displayText = document.getElementById('playerUrlDisplay').textContent;
+      navigator.clipboard.writeText(displayText)
+        .then(() => alert(`Sudah copy semua link yang tampil (${currentPlayerUrls.length} player + 3 promo)!`))
+        .catch(() => alert('Gagal copy, select manual semua link ya.'));
     }
 
     function resetGenerator() {
@@ -204,6 +201,7 @@
       currentPlayerUrls = [];
     }
 
+    // Mode player + popunder (tetap ada hanya di sini)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
