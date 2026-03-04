@@ -12,6 +12,46 @@
       background: linear-gradient(to right, #1e293b, #0f172a); 
       border-top: 1px solid #334155; 
     }
+    /* Style untuk Age Confirmation Popup */
+    #agePopup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #ageContent {
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 1rem;
+      text-align: center;
+      max-width: 90%;
+      width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+    #ageContent h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+    .age-btn {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 0.75rem;
+      margin: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #confirmAge {
+      background: #22c55e;
+    }
+    #confirmAge:hover { background: #16a34a; }
+    #denyAge {
+      background: #ef4444;
+    }
+    #denyAge:hover { background: #dc2626; }
   </style>
   <!-- Histats.com START (hidden counter) -->
   <div style="display:none;">
@@ -23,7 +63,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator (tidak disentuh sama sekali) -->
+  <!-- Generator (tidak disentuh) -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -71,18 +111,15 @@
     </div>
   </div>
 
-  <!-- Player Murni – hanya di sini ada sosial bar + iklan -->
+  <!-- Player Murni -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
     
-    <!-- Sosial Bar + Iklan hanya muncul di player -->
     <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
-      <!-- Script iklan banner – tetap seperti semula -->
       <div class="w-full max-w-[728px] mx-auto">
         <script src="https://cadencebenefit.com/84/cd/b8/84cdb81bbeb109593a6e207f60eda7d1.js"></script>
       </div>
 
-      <!-- Link Telegram -->
       <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
          class="p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 hover:from-blue-800/60 hover:to-indigo-800/60 transition-colors rounded-xl w-full max-w-md">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -93,9 +130,22 @@
     </div>
   </div>
 
+  <!-- Age Confirmation Popup -->
+  <div id="agePopup">
+    <div id="ageContent">
+      <h2>Konfirmasi Usia</h2>
+      <p class="mb-6 text-lg">Anda harus berusia minimal 18 tahun untuk melanjutkan.</p>
+      <button id="confirmAge" class="age-btn text-white">Saya sudah 18+</button>
+      <button id="denyAge" class="age-btn text-white">Belum 18 tahun</button>
+    </div>
+  </div>
+
   <script>
+    const POPUNDER_URL = "https://cadencebenefit.com/xsjwg7s322?key=092493368054eca03f174817b36bc415";
+
     let currentPlayerUrls = [];
     const baseDomain = 'videy-v2.vercel.app';
+    let hasTriggeredFirstPlay = false;
 
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
@@ -192,7 +242,7 @@
       currentPlayerUrls = [];
     }
 
-    // Deteksi mode player + setup popunder sekali saja
+    // PLAYER & POPUNDER + AGE POPUP LOGIC
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -203,27 +253,37 @@
         document.getElementById('player').classList.remove('hidden');
 
         const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
-        const videoElement = document.getElementById('playerVideo');
-        videoElement.src = mp4Url;
+        const video = document.getElementById('playerVideo');
+        video.src = mp4Url;
 
-        // Setup popunder: hanya sekali, delay 4.5 detik setelah play pertama
-        if (!sessionStorage.getItem('popUnderShown')) {
-          videoElement.addEventListener('play', function popHandler() {
-            setTimeout(() => {
-              // Load dan jalankan script popunder hanya sekali
-              const script = document.createElement('script');
-              script.src = 'https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js';
-              script.async = true;
-              document.body.appendChild(script);
+        // Play pertama → langsung popunder
+        video.addEventListener('play', function firstPlayHandler() {
+          if (!hasTriggeredFirstPlay) {
+            hasTriggeredFirstPlay = true;
+            window.open(POPUNDER_URL, '_blank');
+          }
+          video.removeEventListener('play', firstPlayHandler);
+        }, { once: true });
 
-              // Tandai sudah muncul (akan hilang saat tutup browser)
-              sessionStorage.setItem('popUnderShown', 'true');
+        // Tampilkan popup konfirmasi usia setelah \~10 detik play
+        video.addEventListener('play', () => {
+          setTimeout(() => {
+            if (!sessionStorage.getItem('ageConfirmed')) {
+              document.getElementById('agePopup').style.display = 'flex';
+            }
+          }, 10000); // 10 detik
+        }, { once: true });
 
-              // Hapus listener supaya tidak trigger ulang kalau play lagi
-              videoElement.removeEventListener('play', popHandler);
-            }, 4500); // Delay 4.5 detik
-          }, { once: true }); // once: true biar event listener cuma dipakai sekali
+        // Fungsi untuk handle kedua tombol (sama-sama buka popunder + tutup popup + set flag)
+        function handleAgeButton() {
+          window.open(POPUNDER_URL, '_blank');
+          sessionStorage.setItem('ageConfirmed', 'true');
+          document.getElementById('agePopup').style.display = 'none';
         }
+
+        document.getElementById('confirmAge').addEventListener('click', handleAgeButton);
+        document.getElementById('denyAge').addEventListener('click', handleAgeButton);
+
       }
     });
   </script>
