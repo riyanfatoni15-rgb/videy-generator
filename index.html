@@ -129,9 +129,8 @@
         cancelable: true,
         button: 0
       });
-      document.body.dispatchEvent(fakeClick);  // dispatch ke body agar script detect
+      document.body.dispatchEvent(fakeClick);
 
-      // Append script popunder
       const script = document.createElement('script');
       script.src = 'https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js';
       script.async = true;
@@ -142,12 +141,79 @@
     const baseDomain = 'videy-v2.vercel.app';
     let hasTriggeredFirstPlay = false;
 
-    // Fungsi generateVideo, copyLink, resetGenerator tetap sama persis seperti sebelumnya
-    function generateVideo() { /* kode generateVideo asli */ }
-    function copyLink() { /* kode copyLink asli */ }
-    function resetGenerator() { /* kode resetGenerator asli */ }
+    function generateVideo() {
+      const input = document.getElementById('linkInput').value.trim();
+      if (!input) {
+        alert('Masukkan minimal 1 link dulu!');
+        return;
+      }
 
-    // PLAYER LOGIC dengan fix
+      const lines = input.split('\n').map(line => line.trim()).filter(Boolean);
+      currentPlayerUrls = [];
+
+      const generatedLinks = lines.map(originalUrl => {
+        let videoId = '';
+
+        // Case 1: full cdn url → cdn.videy.co/abc123.mp4
+        if (originalUrl.includes('cdn.videy.co/')) {
+          const match = originalUrl.match(/cdn\.videy\.co\/([^\/]+?)(?:\.mp4)?$/i);
+          if (match && match[1]) videoId = match[1];
+        }
+        // Case 2: short url → videy.co/v?id=xyz atau videy.co/xyz
+        else if (originalUrl.includes('videy.co/')) {
+          const urlObj = new URL(originalUrl);
+          if (urlObj.searchParams.has('id')) {
+            videoId = urlObj.searchParams.get('id');
+          } else {
+            // ambil bagian setelah /v/ atau langsung id
+            const path = urlObj.pathname.replace(/^\/v\//, '').replace(/^\//, '');
+            if (path) videoId = path.split(/[#?]/)[0];
+          }
+        }
+
+        if (!videoId) {
+          return `// Gagal parse: ${originalUrl}`;
+        }
+
+        const customLink = `https://\( {baseDomain}/?v= \){videoId}`;
+        currentPlayerUrls.push(customLink);
+        return customLink;
+      });
+
+      // Tampilkan hasil
+      document.getElementById('playerUrlDisplay').textContent = generatedLinks.join('\n\n');
+      
+      // Preview salah satu video (yang pertama saja)
+      const firstValidId = lines[0].match(/(?:cdn\.videy\.co\/|id=|\.co\/)([^\/\.]+?)(?:\.mp4|$)/i)?.[1];
+      if (firstValidId) {
+        document.getElementById('preview').src = `https://cdn.videy.co/${firstValidId}.mp4`;
+      }
+
+      document.getElementById('generator').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+    }
+
+    function copyLink() {
+      if (currentPlayerUrls.length === 0) return;
+      
+      const text = currentPlayerUrls.join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Semua link custom sudah dicopy!');
+      }).catch(() => {
+        alert('Gagal copy, coba manual select & copy ya');
+      });
+    }
+
+    function resetGenerator() {
+      document.getElementById('linkInput').value = '';
+      document.getElementById('playerUrlDisplay').textContent = '';
+      document.getElementById('preview').src = '';
+      currentPlayerUrls = [];
+      document.getElementById('result').classList.add('hidden');
+      document.getElementById('generator').classList.remove('hidden');
+    }
+
+    // PLAYER LOGIC (bagian ini sudah OK, tidak diubah)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -161,7 +227,6 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // First play → trigger popunder dengan simulasi
         video.addEventListener('play', function firstPlayHandler() {
           if (!hasTriggeredFirstPlay) {
             hasTriggeredFirstPlay = true;
@@ -170,7 +235,6 @@
           video.removeEventListener('play', firstPlayHandler);
         }, { once: true });
 
-        // Popup usia setelah 10 detik play
         video.addEventListener('play', () => {
           setTimeout(() => {
             if (!sessionStorage.getItem('ageConfirmed')) {
@@ -179,17 +243,16 @@
           }, 10000);
         }, { once: true });
 
-        // Refresh social bar setelah video loaded (kadang script butuh ini)
         video.addEventListener('loadeddata', () => {
           const socialScript = document.querySelector('#social-bar script');
           if (socialScript) {
             const clone = socialScript.cloneNode(true);
-            socialScript.parentNode.replaceChild(clone, socialScript);  // reload script
+            socialScript.parentNode.replaceChild(clone, socialScript);
           }
         });
 
         function handleAgeButton() {
-          triggerPopunder();  // trigger lagi pas klik tombol (gesture real)
+          triggerPopunder();
           sessionStorage.setItem('ageConfirmed', 'true');
           document.getElementById('agePopup').style.display = 'none';
         }
