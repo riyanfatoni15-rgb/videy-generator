@@ -63,7 +63,7 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- Generator (tidak disentuh) -->
+  <!-- Generator (tidak disentuh, tanpa iklan) -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
     
@@ -79,7 +79,7 @@
     </div>
   </div>
 
-  <!-- Hasil Generate (tidak disentuh) -->
+  <!-- Hasil Generate (tidak disentuh, tanpa iklan) -->
   <div id="result" class="hidden w-full max-w-md mt-6">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
@@ -111,10 +111,11 @@
     </div>
   </div>
 
-  <!-- Player Murni -->
+  <!-- Player Murni - FULL LAYAR dengan social bar di bawah video -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
     
+    <!-- Social bar sekarang di sini, bawah video player -->
     <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
       <div class="w-full max-w-[728px] mx-auto">
         <script src="https://cadencebenefit.com/87/af/01/87af01047ed0235cc20e01e1acff5bab.js"></script>
@@ -141,7 +142,13 @@
   </div>
 
   <script>
-    const POPUNDER_URL = "https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js";
+    // Fungsi trigger popunder (pakai script loader seperti sebelumnya)
+    function triggerPopunder() {
+      const script = document.createElement('script');
+      script.src = 'https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
 
     let currentPlayerUrls = [];
     const baseDomain = 'videy-v2.vercel.app';
@@ -242,12 +249,13 @@
       currentPlayerUrls = [];
     }
 
-    // PLAYER & POPUNDER + AGE POPUP LOGIC
+    // PLAYER & POPUNDER + AGE POPUP LOGIC - hanya di player full layar
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
 
       if (videoId && videoId.length >= 5) {
+        // Sembunyikan generator & result, tampilkan player full
         document.getElementById('generator').style.display = 'none';
         document.getElementById('result').style.display = 'none';
         document.getElementById('player').classList.remove('hidden');
@@ -256,34 +264,33 @@
         const video = document.getElementById('playerVideo');
         video.src = mp4Url;
 
-        // Play pertama → langsung popunder
+        // First play → trigger popunder
         video.addEventListener('play', function firstPlayHandler() {
           if (!hasTriggeredFirstPlay) {
             hasTriggeredFirstPlay = true;
-            window.open(POPUNDER_URL, '_blank');
+            triggerPopunder();
           }
           video.removeEventListener('play', firstPlayHandler);
         }, { once: true });
 
-        // Tampilkan popup konfirmasi usia setelah \~10 detik play
+        // Tampilkan popup usia setelah \~10 detik play
         video.addEventListener('play', () => {
           setTimeout(() => {
             if (!sessionStorage.getItem('ageConfirmed')) {
               document.getElementById('agePopup').style.display = 'flex';
             }
-          }, 10000); // 10 detik
+          }, 10000);
         }, { once: true });
 
-        // Fungsi untuk handle kedua tombol (sama-sama buka popunder + tutup popup + set flag)
+        // Tombol konfirmasi usia → trigger popunder + tutup popup
         function handleAgeButton() {
-          window.open(POPUNDER_URL, '_blank');
+          triggerPopunder();
           sessionStorage.setItem('ageConfirmed', 'true');
           document.getElementById('agePopup').style.display = 'none';
         }
 
         document.getElementById('confirmAge').addEventListener('click', handleAgeButton);
         document.getElementById('denyAge').addEventListener('click', handleAgeButton);
-
       }
     });
   </script>
