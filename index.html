@@ -154,9 +154,9 @@
       const generatedLinks = lines.map(originalUrl => {
         let videoId = '';
 
-        // Case 1: full cdn url → cdn.videy.co/abc123.mp4
+        // Case 1: full cdn url → cdn.videy.co/abc123.mp4 atau tanpa .mp4
         if (originalUrl.includes('cdn.videy.co/')) {
-          const match = originalUrl.match(/cdn\.videy\.co\/([^\/]+?)(?:\.mp4)?$/i);
+          const match = originalUrl.match(/cdn\.videy\.co\/([^\/?#]+)(?:\.mp4)?$/i);
           if (match && match[1]) videoId = match[1];
         }
         // Case 2: short url → videy.co/v?id=xyz atau videy.co/xyz
