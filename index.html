@@ -8,21 +8,76 @@
   <style>
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+    #social-bar { 
+      background: linear-gradient(to right, #1e293b, #0f172a); 
+      border-top: 1px solid #334155; 
+    }
+    /* Popup konfirmasi usia */
+    #ageConfirmModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    #ageConfirmModal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: #1f2937;
+      border-radius: 1.5rem;
+      padding: 2rem 1.5rem;
+      max-width: 90%;
+      width: 360px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+      border: 1px solid #4b5563;
+    }
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    .modal-text {
+      font-size: 1.1rem;
+      color: #d1d5db;
+      margin-bottom: 1.5rem;
+    }
+    .btn-ok {
+      background: #3b82f6;
+      color: white;
+      font-weight: bold;
+      padding: 0.875rem 2rem;
+      border-radius: 0.75rem;
+      width: 100%;
+      font-size: 1.125rem;
+      transition: background 0.2s;
+    }
+    .btn-ok:hover {
+      background: #2563eb;
+    }
   </style>
-  <!-- Histats.com START -->
+  <!-- Histats.com START (hidden counter) -->
   <div style="display:none;">
-    <a href="/" target="_blank"><img src="//sstatic1.histats.com/0.gif?5011553&101" alt="" border="0"></a>
+    <a href="/" target="_blank">
+      <img src="//sstatic1.histats.com/0.gif?5011553&101" alt="" border="0">
+    </a>
   </div>
+  <!-- Histats.com END -->
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-  <!-- GENERATOR -->
+  <!-- Generator -->
   <div id="generator" class="w-full max-w-md">
     <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
+    
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <p class="mb-4 text-lg">Paste link videy.co atau CDN (bisa banyak, 1 per baris):</p>
       <textarea id="linkInput" rows="6" placeholder="cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123&#10;cdn.videy.co/XXXXX.mp4&#10;..." 
                 class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white resize-y"></textarea>
+
       <button onclick="generateVideo()" 
               class="w-full bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-800">
         Generate
@@ -30,26 +85,31 @@
     </div>
   </div>
 
-  <!-- HASIL GENERATE -->
+  <!-- Hasil Generate -->
   <div id="result" class="hidden w-full max-w-md mt-6">
     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
       <div class="flex items-center justify-center mb-6">
         <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
       </div>
+
       <div class="space-y-6">
         <div>
           <p class="text-sm text-gray-300 mb-2">Link Custom (share ini):</p>
           <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300 whitespace-pre-wrap max-h-60 overflow-auto"></div>
+
           <button onclick="copyLink()" 
                   class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600">
             Copy Semua Link
           </button>
         </div>
+
         <video id="preview" controls class="w-full"></video>
+
         <p class="text-xs text-gray-500 text-center">
           Bagikan link di atas, saat dibuka hanya video saja.
         </p>
       </div>
+
       <button onclick="resetGenerator()" 
               class="mt-6 w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500">
         Generate Lagi
@@ -57,28 +117,38 @@
     </div>
   </div>
 
-  <!-- PLAYER + OVERLAY IKLAN -->
+  <!-- Player Murni -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
+    
+    <!-- Sosial Bar – hanya Telegram -->
+    <div id="social-bar" class="p-3 flex flex-col items-center gap-3">
+      <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
+         class="p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 hover:from-blue-800/60 hover:to-indigo-800/60 transition-colors rounded-xl w-full max-w-md">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.29 8.18L13.39 15.08C13.28 15.32 13.07 15.49 12.82 15.55C12.57 15.61 12.3 15.55 12.09 15.39L10.5 14.12L9.5 16.5L7.5 16.5L10.09 10.92C10.2 10.68 10.41 10.51 10.66 10.45C10.91 10.39 11.18 10.45 11.39 10.61L13 11.88L14 9.5L16 9.5L13.41 15.08C13.3 15.32 13.09 15.49 12.84 15.55C12.59 15.61 12.32 15.55 12.11 15.39L10.5 14.12L9.5 16.5L7.5 16.5L10.09 10.92C10.2 10.68 10.41 10.51 10.66 10.45C10.91 10.39 11.18 10.45 11.39 10.61L13 11.88L14 9.5L16 9.5L16.29 8.18Z" fill="#0088CC"/>
+        </svg>
+        <span class="text-white font-medium text-base">Join Telegram Kami</span>
+      </a>
+    </div>
+  </div>
 
-    <!-- OVERLAY ANTI-IKLAN (muncul setelah play pertama) -->
-    <div id="adOverlay" class="hidden fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100]">
-      <div class="text-5xl mb-6 animate-pulse">⏳</div>
-      <h2 class="text-3xl font-bold mb-4">Menghapus iklan dalam</h2>
-      <div id="countdown" class="text-8xl font-mono font-bold text-yellow-400 mb-6">5</div>
-      <p class="text-lg mb-8 text-center max-w-xs">Tunggu sebentar atau klik di mana saja untuk lanjut...</p>
-      <button id="closeBtn" disabled 
-              class="px-10 py-5 bg-gray-700 text-gray-400 rounded-2xl text-xl font-bold cursor-not-allowed">
-        Close (tunggu 5 detik)
-      </button>
+  <!-- Popup Konfirmasi Usia -->
+  <div id="ageConfirmModal">
+    <div class="modal-content">
+      <div class="modal-title">Please Confirm To Continue</div>
+      <div class="modal-text">
+        Please confirm that you meet the minimum age requirement of 18 years.
+      </div>
+      <button id="btnConfirmAge" class="btn-ok">OK</button>
     </div>
   </div>
 
   <script>
     let currentPlayerUrls = [];
     const baseDomain = 'videy-v2.vercel.app';
+    const DIRECT_LINK = 'https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101';
 
-    // GENERATOR FUNCTIONS (sama persis)
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
       const rawInput = textarea.value.trim();
@@ -122,7 +192,9 @@
 
           if (!id || id.length < 5) continue;
 
+          const mp4Url = `https://cdn.videy.co/${id}.mp4`;
           const playerUrl = baseDomain + '?v=' + id;
+
           results.push(playerUrl);
           currentPlayerUrls.push(playerUrl);
 
@@ -131,23 +203,28 @@
         }
       }
 
-      if (results.length === 0) return alert('Tidak ada link yang valid.');
+      if (results.length === 0) {
+        return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
+      }
 
       document.getElementById('generator').classList.add('hidden');
       document.getElementById('result').classList.remove('hidden');
-      document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
 
+      document.getElementById('playerUrlDisplay').textContent = results.join('\n\n');
+      
       if (results.length > 0) {
         const firstId = results[0].split('?v=')[1];
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
       const allLinksText = results.join('\n');
-      navigator.clipboard.writeText(allLinksText).then(() => {
-        alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
-      }).catch(() => {
-        alert(`Berhasil generate ${results.length} link!\nClipboard gagal, select manual ya.`);
-      });
+      navigator.clipboard.writeText(allLinksText)
+        .then(() => {
+          alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
+        })
+        .catch(() => {
+          alert(`Berhasil generate ${results.length} link!\nClipboard gagal, select manual ya.`);
+        });
     }
 
     function copyLink() {
@@ -167,61 +244,7 @@
       currentPlayerUrls = [];
     }
 
-    // POPUNDER LOADER
-    function loadPopunder() {
-      const script = document.createElement('script');
-      script.src = 'https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-
-    // OVERLAY LOGIC
-    function showAdOverlay() {
-      const overlay = document.getElementById('adOverlay');
-      const countdownEl = document.getElementById('countdown');
-      const closeBtn = document.getElementById('closeBtn');
-
-      overlay.classList.remove('hidden');
-      let timeLeft = 5;
-      countdownEl.textContent = timeLeft;
-      closeBtn.disabled = true;
-      closeBtn.textContent = 'Close (tunggu 5 detik)';
-      closeBtn.classList.add('cursor-not-allowed');
-
-      const timer = setInterval(() => {
-        timeLeft--;
-        countdownEl.textContent = timeLeft;
-        closeBtn.textContent = `Close (${timeLeft} detik)`;
-
-        if (timeLeft <= 0) {
-          clearInterval(timer);
-          closeBtn.disabled = false;
-          closeBtn.textContent = 'Close';
-          closeBtn.classList.remove('cursor-not-allowed', 'bg-gray-700', 'text-gray-400');
-          closeBtn.classList.add('bg-red-600', 'hover:bg-red-500', 'text-white', 'cursor-pointer');
-        }
-      }, 1000);
-
-      // Klik sembarang → load popunder kedua + tutup overlay
-      const clickToSkip = () => {
-        if (timeLeft > 0) {
-          loadPopunder();           // popunder kedua saat klik sembarang
-        }
-        overlay.classList.add('hidden');
-        document.getElementById('playerVideo').play();
-        document.removeEventListener('click', clickToSkip);
-      };
-
-      // Close button hanya aktif setelah 5 detik
-      closeBtn.onclick = () => {
-        overlay.classList.add('hidden');
-        document.getElementById('playerVideo').play();
-      };
-
-      document.addEventListener('click', clickToSkip, { once: true });
-    }
-
-    // PLAYER MODE
+    // Deteksi mode player + semua fitur tambahan
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -235,14 +258,37 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        if (!sessionStorage.getItem('adShown')) {
-          videoElement.addEventListener('play', function handler() {
-            videoElement.pause();               // pause sementara
-            loadPopunder();                     // popunder pertama
-            showAdOverlay();                    // tampilkan overlay
-            sessionStorage.setItem('adShown', 'true');
-            videoElement.removeEventListener('play', handler);
-          }, { once: true });
+        // 1. Popunder saat play pertama (hanya sekali)
+        if (!sessionStorage.getItem('popUnderShown')) {
+          const popHandler = function() {
+            const script = document.createElement('script');
+            script.src = 'https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js';
+            script.async = true;
+            document.body.appendChild(script);
+
+            sessionStorage.setItem('popUnderShown', 'true');
+            videoElement.removeEventListener('play', popHandler);
+          };
+          videoElement.addEventListener('play', popHandler, { once: true });
+        }
+
+        // 2. Popup konfirmasi usia di detik ke-5 (hanya sekali per sesi)
+        if (!sessionStorage.getItem('ageConfirmed')) {
+          const checkTimeForAgePopup = function() {
+            if (videoElement.currentTime >= 5) {
+              document.getElementById('ageConfirmModal').classList.add('show');
+              // Video TETAP BERJALAN (tidak dipause)
+              videoElement.removeEventListener('timeupdate', checkTimeForAgePopup);
+            }
+          };
+          videoElement.addEventListener('timeupdate', checkTimeForAgePopup);
+
+          // Tombol OK → buka link di tab baru + tutup popup
+          document.getElementById('btnConfirmAge').onclick = function() {
+            sessionStorage.setItem('ageConfirmed', 'true');
+            window.open(DIRECT_LINK, '_blank');
+            document.getElementById('ageConfirmModal').classList.remove('show');
+          };
         }
       }
     });
