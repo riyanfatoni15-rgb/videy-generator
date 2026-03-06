@@ -8,6 +8,14 @@
   <style>
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+
+    /* Sembunyikan tombol fullscreen */
+    video::-webkit-media-controls-fullscreen-button,
+    video::-moz-media-controls-fullscreen-button,
+    video::-ms-media-controls-fullscreen-button {
+      display: none !important;
+    }
+
     /* Popup usia */
     #ageConfirmModal {
       position: fixed;
@@ -113,10 +121,15 @@
     </div>
   </div>
 
-  <!-- Player – hanya Telegram di bawah -->
+  <!-- Player -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
+    <video id="playerVideo" 
+           controls 
+           playsinline 
+           controlsList="nodownload nofullscreen" 
+           class="flex-1 w-full h-full object-contain"></video>
     
+    <!-- Hanya Telegram -->
     <div class="bg-gradient-to-t from-black/80 to-transparent p-4">
       <div class="flex flex-col items-center gap-3 max-w-md mx-auto">
         <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
@@ -241,7 +254,6 @@
       currentPlayerUrls = [];
     }
 
-    // Player logic + popunder + popup usia
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -273,10 +285,9 @@
             }, 2000);
           };
 
-          // Utama: klik play pertama
           videoElement.addEventListener('play', triggerPopunder, { once: true });
 
-          // Fallback: klik di area video (kalau belum play)
+          // Fallback: klik di area video
           videoElement.addEventListener('click', () => {
             if (!hasTriggered && videoElement.paused) {
               triggerPopunder();
@@ -300,6 +311,20 @@
             document.getElementById('ageConfirmModal').classList.remove('show');
           };
         }
+
+        // Redirect ke direct link saat mencoba fullscreen
+        videoElement.addEventListener('fullscreenchange', () => {
+          if (document.fullscreenElement === videoElement) {
+            // Keluar fullscreen dulu
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+
+            // Buka direct link di tab baru
+            window.open(DIRECT_LINK, '_blank');
+          }
+        });
       }
     });
   </script>
