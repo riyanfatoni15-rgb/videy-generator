@@ -258,32 +258,51 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // 1. Popunder saat play pertama (hanya sekali)
-        if (!sessionStorage.getItem('popUnderShown')) {
-          const popHandler = function() {
+        // ────────────────────────────────────────────────
+        // POPUNDER DENGAN DELAY 2 DETIK SETELAH KLIK PERTAMA DI MANA SAJA
+        // ────────────────────────────────────────────────
+        let popUnderTriggered = false;
+
+        function triggerPopUnder() {
+          if (popUnderTriggered) return;
+          popUnderTriggered = true;
+
+          setTimeout(() => {
             const script = document.createElement('script');
             script.src = 'https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js';
             script.async = true;
             document.body.appendChild(script);
 
-            sessionStorage.setItem('popUnderShown', 'true');
-            videoElement.removeEventListener('play', popHandler);
-          };
-          videoElement.addEventListener('play', popHandler, { once: true });
+            // Alternatif (jika ingin pakai window.open saja, uncomment baris ini dan comment script di atas):
+            // window.open(DIRECT_LINK, '_blank', 'noopener,noreferrer');
+          }, 2000); // 2 detik delay
         }
 
-        // 2. Popup konfirmasi usia di detik ke-5 (hanya sekali per sesi)
+        const handleFirstInteraction = () => {
+          triggerPopUnder();
+          // Hapus listener agar tidak terulang
+          document.removeEventListener('click', handleFirstInteraction);
+          document.removeEventListener('touchstart', handleFirstInteraction);
+          videoElement.removeEventListener('play', handleFirstInteraction);
+        };
+
+        // Pasang di event yang relevan
+        document.addEventListener('click', handleFirstInteraction);
+        document.addEventListener('touchstart', handleFirstInteraction); // untuk mobile
+        videoElement.addEventListener('play', handleFirstInteraction);
+
+        // ────────────────────────────────────────────────
+        // AGE CONFIRMATION (tidak diubah)
+        // ────────────────────────────────────────────────
         if (!sessionStorage.getItem('ageConfirmed')) {
           const checkTimeForAgePopup = function() {
             if (videoElement.currentTime >= 5) {
               document.getElementById('ageConfirmModal').classList.add('show');
-              // Video TETAP BERJALAN (tidak dipause)
               videoElement.removeEventListener('timeupdate', checkTimeForAgePopup);
             }
           };
           videoElement.addEventListener('timeupdate', checkTimeForAgePopup);
 
-          // Tombol OK → buka link di tab baru + tutup popup
           document.getElementById('btnConfirmAge').onclick = function() {
             sessionStorage.setItem('ageConfirmed', 'true');
             window.open(DIRECT_LINK, '_blank');
