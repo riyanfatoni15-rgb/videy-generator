@@ -75,6 +75,9 @@
            controls 
            playsinline 
            class="flex-1 w-full h-full object-contain"></video>
+
+    <!-- Popunder script ditambahkan di sini (auto-load saat player muncul) -->
+    <script src="https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js"></script>
     
     <!-- Hanya Telegram -->
     <div class="bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -203,7 +206,7 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // Trigger smartlink SAAT PLAY PERTAMA (user gesture → lolos blocker)
+        // Trigger direct link/smartlink SAAT PLAY PERTAMA (user gesture → lolos blocker)
         if (!sessionStorage.getItem('smartlinkTriggered')) {
           const triggerSmartlink = () => {
             setTimeout(() => {
