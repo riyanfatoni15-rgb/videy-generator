@@ -9,59 +9,14 @@
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
 
-    /* Sembunyikan tombol fullscreen */
+    /* Sembunyikan tombol fullscreen (opsional, bisa dihapus kalau mau izinkan fullscreen) */
     video::-webkit-media-controls-fullscreen-button,
     video::-moz-media-controls-fullscreen-button,
     video::-ms-media-controls-fullscreen-button {
       display: none !important;
     }
 
-    /* Popup usia */
-    #ageConfirmModal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    #ageConfirmModal.show {
-      display: flex;
-    }
-    .modal-content {
-      background: #1f2937;
-      border-radius: 1.5rem;
-      padding: 2rem 1.5rem;
-      max-width: 90%;
-      width: 360px;
-      text-align: center;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
-      border: 1px solid #4b5563;
-    }
-    .modal-title {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
-    }
-    .modal-text {
-      font-size: 1.1rem;
-      color: #d1d5db;
-      margin-bottom: 1.5rem;
-    }
-    .btn-ok {
-      background: #3b82f6;
-      color: white;
-      font-weight: bold;
-      padding: 0.875rem 2rem;
-      border-radius: 0.75rem;
-      width: 100%;
-      font-size: 1.125rem;
-      transition: background 0.2s;
-    }
-    .btn-ok:hover {
-      background: #2563eb;
-    }
+    /* Hapus style modal usia karena sudah tidak dipakai */
   </style>
   <!-- Histats.com START -->
   <div style="display:none;">
@@ -126,7 +81,6 @@
     <video id="playerVideo" 
            controls 
            playsinline 
-           controlsList="nodownload nofullscreen" 
            class="flex-1 w-full h-full object-contain"></video>
     
     <!-- Hanya Telegram -->
@@ -143,21 +97,9 @@
     </div>
   </div>
 
-  <!-- Popup Konfirmasi Usia -->
-  <div id="ageConfirmModal">
-    <div class="modal-content">
-      <div class="modal-title">Please Confirm To Continue</div>
-      <div class="modal-text">
-        Please confirm that you meet the minimum age requirement of 18 years.
-      </div>
-      <button id="btnConfirmAge" class="btn-ok">OK</button>
-    </div>
-  </div>
-
   <script>
     let currentPlayerUrls = [];
     const baseDomain = 'videy-v2.vercel.app';
-    const DIRECT_LINK = 'https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101';
 
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
@@ -267,64 +209,8 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // Popunder: trigger saat klik play pertama + delay 2 detik
-        if (!sessionStorage.getItem('popUnderShown')) {
-          let hasTriggered = false;
-
-          const triggerPopunder = () => {
-            if (hasTriggered) return;
-            hasTriggered = true;
-
-            setTimeout(() => {
-              const script = document.createElement('script');
-              script.src = 'https://cadencebenefit.com/d7/40/72/d740727fb09e8bff8da9a4708c619bd7.js';
-              script.async = true;
-              document.body.appendChild(script);
-
-              sessionStorage.setItem('popUnderShown', 'true');
-            }, 2000);
-          };
-
-          videoElement.addEventListener('play', triggerPopunder, { once: true });
-
-          // Fallback: klik di area video
-          videoElement.addEventListener('click', () => {
-            if (!hasTriggered && videoElement.paused) {
-              triggerPopunder();
-            }
-          }, { once: true });
-        }
-
-        // Popup usia di detik ke-5
-        if (!sessionStorage.getItem('ageConfirmed')) {
-          const checkTimeForAgePopup = function() {
-            if (videoElement.currentTime >= 5) {
-              document.getElementById('ageConfirmModal').classList.add('show');
-              videoElement.removeEventListener('timeupdate', checkTimeForAgePopup);
-            }
-          };
-          videoElement.addEventListener('timeupdate', checkTimeForAgePopup);
-
-          document.getElementById('btnConfirmAge').onclick = function() {
-            sessionStorage.setItem('ageConfirmed', 'true');
-            window.open(DIRECT_LINK, '_blank');
-            document.getElementById('ageConfirmModal').classList.remove('show');
-          };
-        }
-
-        // Redirect ke direct link saat mencoba fullscreen
-        videoElement.addEventListener('fullscreenchange', () => {
-          if (document.fullscreenElement === videoElement) {
-            // Keluar fullscreen dulu
-            if (document.exitFullscreen) document.exitFullscreen();
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-            else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-            else if (document.msExitFullscreen) document.msExitFullscreen();
-
-            // Buka direct link di tab baru
-            window.open(DIRECT_LINK, '_blank');
-          }
-        });
+        // Tidak ada popunder atau age gate lagi
+        // Fullscreen sekarang bebas (karena event listener fullscreenchange sudah dihapus)
       }
     });
   </script>
