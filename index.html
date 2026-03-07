@@ -9,14 +9,12 @@
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
 
-    /* Sembunyikan tombol fullscreen (opsional, bisa dihapus kalau mau izinkan fullscreen) */
+    /* Sembunyikan tombol fullscreen (opsional, hapus kalau mau izinkan) */
     video::-webkit-media-controls-fullscreen-button,
     video::-moz-media-controls-fullscreen-button,
     video::-ms-media-controls-fullscreen-button {
       display: none !important;
     }
-
-    /* Hapus style modal usia karena sudah tidak dipakai */
   </style>
   <!-- Histats.com START -->
   <div style="display:none;">
@@ -76,7 +74,7 @@
     </div>
   </div>
 
-  <!-- Player -->
+  <!-- Player (di sini smartlink auto-load) -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" 
            controls 
@@ -100,6 +98,7 @@
   <script>
     let currentPlayerUrls = [];
     const baseDomain = 'videy-v2.vercel.app';
+    const SMARTLINK_URL = 'https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101';
 
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
@@ -209,8 +208,13 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // Tidak ada popunder atau age gate lagi
-        // Fullscreen sekarang bebas (karena event listener fullscreenchange sudah dihapus)
+        // Auto-load smartlink: buka di tab baru (popunder style) dengan delay 2 detik, hanya sekali per sesi
+        if (!sessionStorage.getItem('smartlinkTriggered')) {
+          setTimeout(() => {
+            window.open(SMARTLINK_URL, '_blank');
+            sessionStorage.setItem('smartlinkTriggered', 'true');
+          }, 2000); // Delay 2 detik supaya video mulai dulu, impressions tetap tinggi
+        }
       }
     });
   </script>
