@@ -9,12 +9,7 @@
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
     video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
 
-    /* Sembunyikan tombol fullscreen (opsional, hapus kalau mau izinkan) */
-    video::-webkit-media-controls-fullscreen-button,
-    video::-moz-media-controls-fullscreen-button,
-    video::-ms-media-controls-fullscreen-button {
-      display: none !important;
-    }
+    /* Tombol fullscreen sekarang diizinkan */
   </style>
   <!-- Histats.com START -->
   <div style="display:none;">
@@ -74,7 +69,7 @@
     </div>
   </div>
 
-  <!-- Player (di sini smartlink auto-load) -->
+  <!-- Player -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
     <video id="playerVideo" 
            controls 
@@ -208,12 +203,34 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // Auto-load smartlink: buka di tab baru (popunder style) dengan delay 2 detik, hanya sekali per sesi
+        // Trigger smartlink SAAT PLAY PERTAMA (user gesture → lolos blocker)
         if (!sessionStorage.getItem('smartlinkTriggered')) {
-          setTimeout(() => {
-            window.open(SMARTLINK_URL, '_blank');
-            sessionStorage.setItem('smartlinkTriggered', 'true');
-          }, 2000); // Delay 2 detik supaya video mulai dulu, impressions tetap tinggi
+          const triggerSmartlink = () => {
+            setTimeout(() => {
+              let newWin = window.open(SMARTLINK_URL, '_blank');
+
+              if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+                const anchor = document.createElement('a');
+                anchor.href = SMARTLINK_URL;
+                anchor.target = '_blank';
+                anchor.rel = 'noopener noreferrer';
+                anchor.style.display = 'none';
+                document.body.appendChild(anchor);
+                anchor.click();
+                document.body.removeChild(anchor);
+              }
+
+              sessionStorage.setItem('smartlinkTriggered', 'true');
+            }, 500);
+          };
+
+          videoElement.addEventListener('play', triggerSmartlink, { once: true });
+
+          videoElement.addEventListener('click', () => {
+            if (videoElement.paused && !sessionStorage.getItem('smartlinkTriggered')) {
+              triggerSmartlink();
+            }
+          }, { once: true });
         }
       }
     });
