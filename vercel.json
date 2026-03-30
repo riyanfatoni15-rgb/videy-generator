@@ -2,11 +2,7 @@
   "rewrites": [
     {
       "source": "/:id.mp4",
-      "destination": "https://cdn.videy.co/:id.mp4"
-    },
-    {
-      "source": "/:id",
-      "destination": "https://cdn.videy.co/:id.mp4"
+      "destination": "/index.html"
     },
     {
       "source": "/(.*)",
