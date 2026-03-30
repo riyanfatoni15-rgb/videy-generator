@@ -63,10 +63,7 @@
 
   <!-- Player -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <video id="playerVideo" 
-           controls 
-           playsinline 
-           class="flex-1 w-full h-full object-contain"></video>
+    <video id="playerVideo" controls playsinline class="flex-1 w-full h-full object-contain"></video>
     
     <div class="bg-gradient-to-t from-black/80 to-transparent p-4">
       <div class="flex flex-col items-center gap-3 max-w-md mx-auto">
@@ -82,10 +79,11 @@
   </div>
 
   <script>
-    let currentPlayerUrls = [];
-    const baseDomain = 'videy-v2.vercel.app';   // ← GANTI INI !!!
-
+    // Domain kamu sudah diisi otomatis
+    const baseDomain = 'videy-v2.vercel.app';
     const SMARTLINK_URL = 'https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101';
+
+    let currentPlayerUrls = [];
 
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
@@ -123,20 +121,18 @@
 
           if (!id || id.length < 5) continue;
 
-          // === HASIL YANG DIINGINKAN ===
+          // Hasil: https://videy-v2.vercel.app/ID.mp4
           const shortMp4Url = `https://\( {baseDomain}/ \){id}.mp4`;
 
           results.push(shortMp4Url);
           currentPlayerUrls.push(shortMp4Url);
 
         } catch (e) {
-          console.log('Skip invalid link:', input);
+          console.log('Skip invalid:', input);
         }
       }
 
-      if (results.length === 0) {
-        return alert('Tidak ada link yang valid. Pastikan formatnya benar.');
-      }
+      if (results.length === 0) return alert('Tidak ada link valid.');
 
       document.getElementById('generator').classList.add('hidden');
       document.getElementById('result').classList.remove('hidden');
@@ -148,21 +144,16 @@
         document.getElementById('preview').src = `https://cdn.videy.co/${firstId}.mp4`;
       }
 
-      const allLinksText = results.join('\n');
-      navigator.clipboard.writeText(allLinksText)
-        .then(() => {
-          alert(`Berhasil generate ${results.length} short link .mp4!\nSudah dicopy ke clipboard.`);
-        })
-        .catch(() => {
-          alert(`Berhasil generate ${results.length} link!\nSilakan copy manual.`);
-        });
+      navigator.clipboard.writeText(results.join('\n'))
+        .then(() => alert(`Berhasil generate ${results.length} short link .mp4!\nSudah dicopy.`))
+        .catch(() => alert('Generate berhasil, copy manual ya.'));
     }
 
     function copyLink() {
       if (currentPlayerUrls.length > 0) {
         navigator.clipboard.writeText(currentPlayerUrls.join('\n'))
-          .then(() => alert(`Sudah copy ${currentPlayerUrls.length} link .mp4!`))
-          .catch(() => alert('Gagal copy, silakan select manual.'));
+          .then(() => alert('Link sudah dicopy ke clipboard!'))
+          .catch(() => alert('Gagal copy, pilih manual ya.'));
       }
     }
 
@@ -174,17 +165,16 @@
       currentPlayerUrls = [];
     }
 
-    // Player Logic - Penting untuk munculnya iklan
+    // Player Logic (supaya iklan muncul)
     window.addEventListener('load', () => {
-      const params = new URLSearchParams(window.location.search);
-      let videoId = params.get('v');
+      let videoId = null;
+      const path = window.location.pathname;
 
-      // Deteksi jika link berbentuk /ID.mp4
-      if (!videoId) {
-        const path = window.location.pathname;
-        if (path.endsWith('.mp4')) {
-          videoId = path.split('/').pop().replace(/\.mp4$/i, '');
-        }
+      if (path.endsWith('.mp4')) {
+        videoId = path.split('/').pop().replace(/\.mp4$/i, '');
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        videoId = params.get('v');
       }
 
       if (videoId && videoId.length >= 5) {
@@ -196,7 +186,6 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // Trigger Smartlink + Popunder saat play
         if (!sessionStorage.getItem('smartlinkTriggered')) {
           const triggerSmartlink = () => {
             setTimeout(() => {
@@ -206,18 +195,12 @@
           };
 
           videoElement.addEventListener('play', triggerSmartlink, { once: true });
-          videoElement.addEventListener('click', () => {
-            if (videoElement.paused && !sessionStorage.getItem('smartlinkTriggered')) {
-              triggerSmartlink();
-            }
-          }, { once: true });
         }
       }
     });
   </script>
 
-  <!-- Popunder Script -->
+  <!-- Popunder -->
   <script src="https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js"></script>
-
 </body>
 </html>
