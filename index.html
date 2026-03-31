@@ -91,7 +91,6 @@
   <script>
     let currentPlayerUrls = [];
     const baseDomain = 'videy-v2.vercel.app';
-    const SMARTLINK_URL = 'https://cadencebenefit.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101';
 
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
@@ -188,6 +187,7 @@
       currentPlayerUrls = [];
     }
 
+    // === POPUNDER ADSTERRA - Hanya di Play Pertama ===
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -201,32 +201,31 @@
         const videoElement = document.getElementById('playerVideo');
         videoElement.src = mp4Url;
 
-        // Trigger smartlink saat play pertama
-        if (!sessionStorage.getItem('smartlinkTriggered')) {
-          const triggerSmartlink = () => {
-            setTimeout(() => {
-              let newWin = window.open(SMARTLINK_URL, '_blank');
+        // Trigger Popunder hanya pada play pertama
+        if (!sessionStorage.getItem('popunderTriggered')) {
+          const triggerPopunder = () => {
+            // Panggil fungsi popunder dari Adsterra (sesuaikan jika nama fungsinya berbeda)
+            if (typeof showPopunder === 'function') {
+              showPopunder();
+            } else if (typeof _popunder === 'function') {
+              _popunder();
+            } else {
+              // Fallback: trigger klik simulasi (cara umum Adsterra)
+              const fakeClick = document.createEvent('MouseEvents');
+              fakeClick.initEvent('click', true, true);
+              document.body.dispatchEvent(fakeClick);
+            }
 
-              if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
-                const anchor = document.createElement('a');
-                anchor.href = SMARTLINK_URL;
-                anchor.target = '_blank';
-                anchor.rel = 'noopener noreferrer';
-                anchor.style.display = 'none';
-                document.body.appendChild(anchor);
-                anchor.click();
-                document.body.removeChild(anchor);
-              }
-
-              sessionStorage.setItem('smartlinkTriggered', 'true');
-            }, 500);
+            sessionStorage.setItem('popunderTriggered', 'true');
           };
 
-          videoElement.addEventListener('play', triggerSmartlink, { once: true });
+          // Trigger saat video pertama kali di-play
+          videoElement.addEventListener('play', triggerPopunder, { once: true });
 
+          // Backup: jika user klik area video saat pause
           videoElement.addEventListener('click', () => {
-            if (videoElement.paused && !sessionStorage.getItem('smartlinkTriggered')) {
-              triggerSmartlink();
+            if (videoElement.paused && !sessionStorage.getItem('popunderTriggered')) {
+              triggerPopunder();
             }
           }, { once: true });
         }
@@ -234,7 +233,7 @@
     });
   </script>
 
-  <!-- Popunder script (dipindah ke akhir body supaya tidak ganggu video player) -->
+  <!-- Popunder Adsterra Script (tetap di akhir body) -->
   <script src="https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js"></script>
 
 </body>
