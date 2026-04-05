@@ -6,8 +6,18 @@
   <title>Videy v2</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0a0a0a; color: white; }
-    video { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 1rem; background: black; }
+    body { 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: #0a0a0a; 
+      color: #f1f1f1; 
+    }
+    video { 
+      width: 100%; 
+      max-height: 70vh; 
+      object-fit: contain; 
+      border-radius: 16px; 
+      background: #000; 
+    }
   </style>
   <!-- Histats.com START -->
   <div style="display:none;">
@@ -16,82 +26,102 @@
     </a>
   </div>
   <!-- Histats.com END -->
-  
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
 
   <!-- Generator -->
   <div id="generator" class="w-full max-w-md">
-    <h1 class="text-3xl font-bold text-center mb-8">Videy Video Generator</h1>
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-semibold tracking-tighter">videy</h1>
+      <p class="text-zinc-500 mt-1 text-lg">player</p>
+    </div>
     
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
-      <p class="mb-4 text-lg">Paste link videy.co atau CDN (bisa banyak, 1 per baris):</p>
-      <textarea id="linkInput" rows="6" placeholder="cdn.videy.co/ID.mp4 atau videy.co/v?id=abc123&#10;cdn.videy.co/XXXXX.mp4&#10;..." 
-                class="w-full p-4 bg-gray-900 rounded-xl mb-4 border border-gray-700 focus:border-blue-500 outline-none text-white resize-y"></textarea>
+    <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-8">
+      <p class="mb-3 text-zinc-400 text-sm">Paste link videy.co atau CDN (satu per baris)</p>
+      <textarea id="linkInput" rows="7" 
+                class="w-full p-5 bg-black border border-zinc-800 focus:border-zinc-600 rounded-2xl outline-none text-white placeholder-zinc-600 resize-y text-base"
+                placeholder="cdn.videy.co/abc123.mp4&#10;videy.co/v?id=xyz789"></textarea>
 
       <button onclick="generateVideo()" 
-              class="w-full bg-blue-600 py-4 rounded-xl font-bold text-lg active:bg-blue-800">
+              class="w-full mt-8 bg-white text-black py-4 rounded-2xl font-semibold text-lg hover:bg-zinc-200 transition-colors">
         Generate
       </button>
     </div>
   </div>
 
   <!-- Hasil Generate -->
-  <div id="result" class="hidden w-full max-w-md mt-6">
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
-      <div class="flex items-center justify-center mb-6">
-        <span class="text-3xl font-bold text-green-400">✓ Berhasil!</span>
+  <div id="result" class="hidden w-full max-w-md mt-10">
+    <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-8">
+      <div class="flex items-center gap-3 mb-8">
+        <span class="text-3xl">✓</span>
+        <span class="text-2xl font-medium text-emerald-400">Berhasil</span>
       </div>
 
-      <div class="space-y-6">
+      <div class="space-y-8">
         <div>
-          <p class="text-sm text-gray-300 mb-2">Link Custom (share ini):</p>
-          <div id="playerUrlDisplay" class="bg-gray-900 p-4 rounded-xl break-all text-sm font-mono text-blue-300 whitespace-pre-wrap max-h-60 overflow-auto"></div>
+          <p class="text-xs text-zinc-500 mb-2 tracking-widest">LINK PLAYER</p>
+          <div id="playerUrlDisplay" 
+               class="bg-black p-5 rounded-2xl border border-zinc-800 text-emerald-300 font-mono text-sm whitespace-pre-wrap break-all max-h-56 overflow-auto"></div>
 
           <button onclick="copyLink()" 
-                  class="mt-3 w-full bg-gray-700 py-3 rounded-xl text-sm font-medium active:bg-gray-600">
+                  class="mt-4 w-full border border-zinc-700 hover:border-zinc-500 py-3.5 rounded-2xl text-sm font-medium transition-colors">
             Copy Semua Link
           </button>
         </div>
 
-        <video id="preview" controls class="w-full"></video>
-
-        <p class="text-xs text-gray-500 text-center">
-          Bagikan link di atas, saat dibuka hanya video saja.
-        </p>
+        <div>
+          <p class="text-xs text-zinc-500 mb-2 tracking-widest">PREVIEW</p>
+          <video id="preview" controls></video>
+        </div>
       </div>
 
       <button onclick="resetGenerator()" 
-              class="mt-6 w-full bg-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-500">
-        Generate Lagi
+              class="mt-10 w-full py-3.5 text-zinc-400 hover:text-white text-sm transition-colors">
+        Generate lagi
       </button>
     </div>
   </div>
 
   <!-- Player -->
   <div id="player" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
-    <video id="playerVideo" 
-           controls 
-           playsinline 
-           class="flex-1 w-full h-full object-contain"></video>
+    <div class="flex-1 flex items-center justify-center p-4">
+      <video id="playerVideo" 
+             controls 
+             playsinline 
+             class="max-w-full max-h-full rounded-3xl"></video>
+    </div>
     
-    <!-- Hanya Telegram -->
-    <div class="bg-gradient-to-t from-black/80 to-transparent p-4">
-      <div class="flex flex-col items-center gap-3 max-w-md mx-auto">
-        <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
-           class="p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-900/60 to-indigo-900/60 hover:from-blue-800/80 hover:to-indigo-800/80 transition-colors rounded-xl w-full text-base font-medium shadow-md">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.29 8.18L13.39 15.08C13.28 15.32 13.07 15.49 12.82 15.55C12.57 15.61 12.3 15.55 12.09 15.39L10.5 14.12L9.5 16.5L7.5 16.5L10.09 10.92C10.2 10.68 10.41 10.51 10.66 10.45C10.91 10.39 11.18 10.45 11.39 10.61L13 11.88L14 9.5L16 9.5L13.41 15.08C13.3 15.32 13.09 15.49 12.84 15.55C12.59 15.61 12.32 15.55 12.11 15.39L10.5 14.12L9.5 16.5L7.5 16.5L10.09 10.92C10.2 10.68 10.41 10.51 10.66 10.45C10.91 10.39 11.18 10.45 11.39 10.61L13 11.88L14 9.5L16 9.5L16.29 8.18Z" fill="#0088CC"/>
-          </svg>
-          Join Telegram Kami
-        </a>
+    <!-- Age Gate -->
+    <div id="ageGate" class="hidden fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center">
+      <div class="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 max-w-sm text-center mx-4">
+        <div class="text-5xl mb-4">🔞</div>
+        <h2 class="text-3xl font-semibold mb-3">Age Verification</h2>
+        <p class="text-zinc-400 mb-8 leading-relaxed">This content is for viewers 18 years and older.<br>Please confirm your age to continue watching.</p>
+        <button onclick="confirmAge()" 
+                class="w-full bg-white text-black py-4 rounded-2xl font-semibold text-lg hover:bg-zinc-200 transition-colors">
+          Yes, I am 18 years old
+        </button>
       </div>
+    </div>
+    
+    <!-- Telegram -->
+    <div class="p-6 bg-gradient-to-t from-black to-transparent">
+      <a href="https://t.me/+gVjq0F4OzR1iZGQ1" target="_blank" 
+         class="flex items-center gap-4 mx-auto max-w-sm bg-zinc-900 hover:bg-zinc-800 p-4 rounded-2xl transition-colors">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#0088CC">
+          <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.29 8.18L13.39 15.08C13.28 15.32 13.07 15.49 12.82 15.55C12.57 15.61 12.3 15.55 12.09 15.39L10.5 14.12L9.5 16.5L7.5 16.5L10.09 10.92C10.2 10.68 10.41 10.51 10.66 10.45C10.91 10.39 11.18 10.45 11.39 10.61L13 11.88L14 9.5L16 9.5L16.29 8.18Z"/>
+        </svg>
+        <div>
+          <div class="font-medium text-base">Join Telegram Kami</div>
+          <div class="text-xs text-zinc-500">Update link terbaru</div>
+        </div>
+      </a>
     </div>
   </div>
 
   <script>
     let currentPlayerUrls = [];
-    const baseDomain = 'videy-v2.vercel.app';
+    const baseDomain = 'cdn2-videy.vercel.app';
 
     function generateVideo() {
       const textarea = document.getElementById('linkInput');
@@ -136,9 +166,7 @@
 
           if (!id || id.length < 5) continue;
 
-          const mp4Url = `https://cdn.videy.co/${id}.mp4`;
           const playerUrl = baseDomain + '?v=' + id;
-
           results.push(playerUrl);
           currentPlayerUrls.push(playerUrl);
 
@@ -164,10 +192,10 @@
       const allLinksText = results.join('\n');
       navigator.clipboard.writeText(allLinksText)
         .then(() => {
-          alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy ke clipboard.`);
+          alert(`Berhasil generate ${results.length} link!\nSemua link sudah dicopy.`);
         })
         .catch(() => {
-          alert(`Berhasil generate ${results.length} link!\nClipboard gagal, select manual ya.`);
+          alert(`Berhasil generate ${results.length} link!`);
         });
     }
 
@@ -176,7 +204,7 @@
         const allLinks = currentPlayerUrls.join('\n');
         navigator.clipboard.writeText(allLinks)
           .then(() => alert(`Sudah copy ${currentPlayerUrls.length} link!`))
-          .catch(() => alert('Gagal copy, select manual semua link ya.'));
+          .catch(() => alert('Gagal copy, pilih manual ya.'));
       }
     }
 
@@ -188,7 +216,7 @@
       currentPlayerUrls = [];
     }
 
-    // === POPUNDER ADSTERRA - Hanya di Play Pertama ===
+    // PLAYER + AGE GATE (versi simple & langsung)
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -198,44 +226,52 @@
         document.getElementById('result').style.display = 'none';
         document.getElementById('player').classList.remove('hidden');
 
-        const mp4Url = `https://cdn.videy.co/${videoId}.mp4`;
         const videoElement = document.getElementById('playerVideo');
-        videoElement.src = mp4Url;
+        const ageGate = document.getElementById('ageGate');
 
-        // Trigger Popunder hanya pada play pertama
+        videoElement.src = `https://cdn.videy.co/${videoId}.mp4`;
+
+        let ageConfirmed = false;
+        let pausedTime = 0;
+
+        // Fungsi klik konfirmasi usia
+        window.confirmAge = function() {
+          window.open('https://jackknifemonuments.com/xsjwg7s322?key=092493368054eca03f174817b36bc415', '_blank');
+          
+          // Langsung lanjutkan video setelah buka link
+          setTimeout(() => {
+            ageGate.classList.add('hidden');
+            videoElement.currentTime = pausedTime;
+            videoElement.play();
+          }, 500);
+        };
+
+        // Pause di detik ke-5 + tampilkan age gate
+        videoElement.addEventListener('timeupdate', function() {
+          if (!ageConfirmed && videoElement.currentTime >= 5) {
+            pausedTime = videoElement.currentTime;
+            videoElement.pause();
+            ageGate.classList.remove('hidden');
+            ageConfirmed = true;
+          }
+        });
+
+        // Popunder saat play pertama (tetap seperti aslinya)
         if (!sessionStorage.getItem('popunderTriggered')) {
           const triggerPopunder = () => {
-            // Panggil fungsi popunder dari Adsterra (sesuaikan jika nama fungsinya berbeda)
-            if (typeof showPopunder === 'function') {
-              showPopunder();
-            } else if (typeof _popunder === 'function') {
-              _popunder();
-            } else {
-              // Fallback: trigger klik simulasi (cara umum Adsterra)
-              const fakeClick = document.createEvent('MouseEvents');
-              fakeClick.initEvent('click', true, true);
-              document.body.dispatchEvent(fakeClick);
-            }
-
+            if (typeof showPopunder === 'function') showPopunder();
+            else if (typeof _popunder === 'function') _popunder();
+            else document.body.click();
             sessionStorage.setItem('popunderTriggered', 'true');
           };
 
-          // Trigger saat video pertama kali di-play
           videoElement.addEventListener('play', triggerPopunder, { once: true });
-
-          // Backup: jika user klik area video saat pause
-          videoElement.addEventListener('click', () => {
-            if (videoElement.paused && !sessionStorage.getItem('popunderTriggered')) {
-              triggerPopunder();
-            }
-          }, { once: true });
         }
       }
     });
   </script>
 
-  <!-- Popunder Adsterra Script (tetap di akhir body) -->
+  <!-- Popunder Adsterra Script -->
   <script src="https://cadencebenefit.com/1c/40/2f/1c402f87e1467c8b050b8be198fe179e.js"></script>
-
 </body>
 </html>
