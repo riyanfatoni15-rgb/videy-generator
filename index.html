@@ -216,7 +216,12 @@
       currentPlayerUrls = [];
     }
 
-    // PLAYER + AGE GATE (versi simple & langsung)
+    // Age Gate function (tetap ada meski tidak dipakai untuk redirect)
+    window.confirmAge = function() {
+      window.open('https://jackknifemonuments.com/xsjwg7s322?key=092493368054eca03f174817b36bc415', '_blank');
+    };
+
+    // ==================== PLAYER + AUTO DIRECT SMARTLINK DI DETIK KE-4 ====================
     window.addEventListener('load', () => {
       const params = new URLSearchParams(window.location.search);
       const videoId = params.get('v');
@@ -231,32 +236,21 @@
 
         videoElement.src = `https://cdn.videy.co/${videoId}.mp4`;
 
-        let ageConfirmed = false;
-        let pausedTime = 0;
+        let redirected = false;   // flag agar hanya redirect sekali
 
-        // Fungsi klik konfirmasi usia
-        window.confirmAge = function() {
-          window.open('https://jackknifemonuments.com/jv8xiueh?key=d2505f9b9a140229096fea80f3d15101', '_blank');
-          
-          // Langsung lanjutkan video setelah buka link
-          setTimeout(() => {
-            ageGate.classList.add('hidden');
-            videoElement.currentTime = pausedTime;
-            videoElement.play();
-          }, 500);
-        };
-
-        // Pause di detik ke-5 + tampilkan age gate
+        // AUTO DIRECT SMARTLINK di detik ke-4
         videoElement.addEventListener('timeupdate', function() {
-          if (!ageConfirmed && videoElement.currentTime >= 5) {
-            pausedTime = videoElement.currentTime;
-            videoElement.pause();
-            ageGate.classList.remove('hidden');
-            ageConfirmed = true;
+          if (!redirected && videoElement.currentTime >= 4) {
+            redirected = true;
+
+            // GANTI DENGAN SMARTLINK ANDA
+            const smartlinkUrl = "https://jackknifemonuments.com/xsjwg7s322?key=092493368054eca03f174817b36bc415";
+
+            window.open(smartlinkUrl, '_blank');
           }
         });
 
-        // Popunder saat play pertama (tetap seperti aslinya)
+        // Popunder saat play pertama
         if (!sessionStorage.getItem('popunderTriggered')) {
           const triggerPopunder = () => {
             if (typeof showPopunder === 'function') showPopunder();
